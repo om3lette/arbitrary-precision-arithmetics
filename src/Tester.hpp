@@ -4,7 +4,7 @@
 #include <functional>
 #include <vector>
 #include <optional>
-// using testfunc_t = std::function<std::optional<bool>()>;
+
 namespace test {
     class Tester {
         private:
@@ -22,4 +22,10 @@ namespace test {
             void registerTest(std::function<bool()> testFunction, const std::string& testMessage, bool isExceptionTest  = false);
             bool runTests(void);
     };
+
+    template<typename T>
+    std::function<bool()> isEquals(T x, T y) {
+        return [x, y]() { return x == y; };
+    }
+    template std::function<bool()> isEquals<std::string>(std::string, std::string);
 }

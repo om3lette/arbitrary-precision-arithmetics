@@ -1,6 +1,7 @@
 # C++ build process
 build
 long-arithmetics
+a.out
 
 # Ide files
 .vscode
