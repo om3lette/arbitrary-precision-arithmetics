@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <iostream>
+#include <compare>
 
 #define digitsPerChunk 32
 
@@ -29,6 +30,9 @@ namespace LongArithm {
 
             void printChunks(void) const;
             const std::string toString(void) const;
+
+            std::strong_ordering operator<=>(const LongNumber& other) const;
+            bool operator==(const LongNumber& other) const;
     };
     LongNumber operator""_longnum(long double value);
     std::ostream& operator<<(std::ostream& os, const LongNumber& number);

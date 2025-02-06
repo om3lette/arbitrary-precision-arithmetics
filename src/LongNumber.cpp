@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <sstream>
 #include <algorithm>
+#include <compare>
 #include "LongArithm.hpp"
 
 namespace LongArithm {
@@ -49,10 +50,11 @@ namespace LongArithm {
             wholePart /= (1ULL << 32);
         }
         int i = 0;
-        while (fracPart > 0) {
+        int fracChunks = getFractionChunks();
+        while (fracPart != 0 && i < fracChunks) {
             fracPart *= (1ULL << 32);
             uint32_t chunk = static_cast<uint32_t>(fracPart);
-            chunks[getFractionChunks() - i - 1] = chunk;
+            chunks[fracChunks - i - 1] = chunk;
             fracPart -= chunk;
             i++;
         }
@@ -64,7 +66,7 @@ namespace LongArithm {
 
     // Calculate how many chunks are storing after decimal point values
     inline int LongNumber::getFractionChunks(void) const {
-        return std::ceil(static_cast<float>(fractionBits) / digitsPerChunk);
+        return std::ceil(static_cast<long double>(fractionBits) / digitsPerChunk);
     }
 
     void LongNumber::parseString(const std::string& input) {
@@ -146,6 +148,42 @@ namespace LongArithm {
         return os;
     }
 
+    std::strong_ordering LongNumber::operator<=>(const LongNumber& other) const {
+        // Compare signs
+        if (sign < other.sign) return std::strong_ordering::less;
+        if (sign > other.sign) return std::strong_ordering::greater;
+
+        // Compare whole part length
+        size_t wholeSizeThis = chunks.size() - getFractionChunks();
+        size_t wholeSizeOther = other.chunks.size() - other.getFractionChunks();
+        if (wholeSizeThis != wholeSizeOther) return wholeSizeThis <=> wholeSizeOther;
+        int sizeThis = chunks.size();
+        int sizeOther = other.chunks.size();
+
+        // Compare number knowing that whole parts are identical in length
+        // Init as one to account for 0 indexing
+        int i = 1;
+        int sizeDiff = std::abs(sizeThis - sizeOther);
+        while (chunks[sizeThis - i] == other.chunks[sizeOther - i] && sizeThis - i > sizeDiff && sizeOther - i > sizeDiff)
+            i++;
+        if (chunks[sizeThis - i] != other.chunks[sizeOther - i]) return chunks[sizeThis - i] <=> other.chunks[sizeOther - i];
+        
+        // All chunks of the smaller number are equal to the once of the longer one
+        if (sizeThis == sizeOther) return std::strong_ordering::equal;
+        if (sizeThis - sizeOther > 0) {
+            while (i > 0 && chunks[i] == 0) i--;
+            if (chunks[i] == 0) return std::strong_ordering::equal;
+            return std::strong_ordering::greater;
+        }
+        
+        while (i > 0 && other.chunks[i] == 0) i++;
+        if (other.chunks[i] == 0) return std::strong_ordering::equal;
+        return std::strong_ordering::less;
+    }
+    bool LongNumber::operator==(const LongNumber& other) const {
+        return (*this <=> other) == std::strong_ordering::equal;
+    };
+
     // Debug purposes only
     void LongNumber::printChunks(void) const {
         int fractionChunks = getFractionChunks();
@@ -155,6 +193,7 @@ namespace LongArithm {
             std::cout << chunks[i];
             if (i != fractionChunks - 1 && i != chunks.size() - 1) std::cout << ", ";
         }
-        std::cout << "] | " << "Precision: " << fractionBits << std::endl;
+        if (chunks.size() == getFractionChunks()) std::cout << " | -";
+        std::cout << "] | " << "Precision: " << fractionBits << ", Fraction chunks: " << getFractionChunks() << std::endl;
     }
 }

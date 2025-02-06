@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-c
+CFLAGS=-c --std=c++23
 LDFLAGS=
 BUILD_PATH=build
 SRC_PATH=src
