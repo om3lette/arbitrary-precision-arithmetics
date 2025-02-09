@@ -28,9 +28,10 @@ LongNumber::LongNumber(const std::string input, int _fractionBits) {
 LongNumber::LongNumber(int input, int _fractionBits) {
 	fractionBits = _fractionBits;
 	sign = input < 0 ? -1 : 1;
+	input = abs(input);
 	allocateFraction();
-	uint32_t chunk = 0;
 
+	uint32_t chunk = 0;
 	int digit = 0;
 	int i = 0;
 	while (input != 0) {
@@ -44,6 +45,7 @@ LongNumber::LongNumber(int input, int _fractionBits) {
 
 LongNumber::LongNumber(long double input, int _fractionBits) {
 	sign = input < 0 ? -1 : 1;
+	input = abs(input);
 	fractionBits = _fractionBits;
 	allocateFraction();
 
@@ -67,6 +69,19 @@ LongNumber::LongNumber(long double input, int _fractionBits) {
 }
 
 inline char LongNumber::digitToChar(const int d) const { return d + '0'; }
+void LongNumber::setPrecision(uint32_t _precision) {
+	uint32_t oldFracChunks = getFractionChunks();
+	fractionBits = _precision;
+
+	int chunkDif = getFractionChunks() - oldFracChunks;
+	if (chunkDif == 0) return;
+
+	if (chunkDif > 0)
+		chunks.insert(chunks.begin(), chunkDif, 0);
+	else
+		// chunkDif < 0 => chunks.begin() - chunkDif (not +)
+		chunks.erase(chunks.begin(), chunks.begin() - chunkDif);
+}
 
 // Calculate how many chunks are storing after decimal point values
 inline int LongNumber::getFractionChunks(void) const {
@@ -277,6 +292,34 @@ LongNumber LongNumber::operator-(const LongNumber &other) const {
 	}
 	// Remove leading zero chunks
 	result.truncateWholePart();
+	return result;
+}
+
+LongNumber LongNumber::operator*(const LongNumber &other) const {
+	// TODO: Constructor only accepts uint32_t
+	// Round to digitsPerChunk
+	uint64_t newPrecision =
+		(getFractionChunks() + other.getFractionChunks()) * digitsPerChunk;
+	LongNumber result(0.0L, newPrecision);
+	result.sign = sign * other.sign;
+
+	// x * 0 = 0
+	if (*this == 0 || other == 0) return result;
+	result.chunks.resize(chunks.size() + other.chunks.size());
+
+	for (int i = 0; i < chunks.size(); i++) {
+		uint32_t carry = 0;
+		for (int j = 0; j < other.chunks.size(); j++) {
+			uint64_t mult = static_cast<uint64_t>(chunks[i]) * other.chunks[j] +
+							carry + result.chunks[i + j];
+			result.chunks[i + j] = static_cast<uint32_t>(mult);
+			carry = mult >> 32;
+		}
+		result.chunks[i + other.chunks.size()] += carry;
+	}
+	result.truncateWholePart();
+	// Set precision to max (not rounding by digitsPerChunk)
+	result.setPrecision(std::max(fractionBits, other.fractionBits));
 	return result;
 }
 

@@ -10,8 +10,8 @@ using namespace test;
 int main(void) {
 	// TODO: Current precision loss when reading from float on
 	// conversion example 0.25000000000000000001_longnum ==
-	// 0.25000000000000000000_longnum
-	// => true Happens on 19th digit after decimal point
+	// 0.25000000000000000000_longnum => true Happens on 19th digit after
+	// decimal point
 
 	bool success = true;
 
@@ -269,7 +269,6 @@ int main(void) {
 		isEquals(0.5_longnum + 0.5_longnum, 1.0_longnum),
 		"0.5 + 0.5 = 1.0 (float -> whole carry)"
 	);
-	// -a - b -> -a + -b || a - (-b) -> a + b (-)
 	testerArithmetics.registerTest(
 		isEquals(-0.5_longnum + 0.5_longnum, 0.0_longnum),
 		"-0.5 + 0.5 = 0 (-a + b -> b - a)"
@@ -277,6 +276,51 @@ int main(void) {
 	testerArithmetics.registerTest(
 		isEquals(0.5_longnum + -0.5_longnum, 0.0_longnum),
 		"0.5 + -0.5 = 0 (a + (-b) -> a - b)"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(2) * LongNumber(2), LongNumber(4)), "2 * 2 = 4"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(2) * LongNumber(-2), LongNumber(-4)),
+		"2 * (-2) = -4"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(-2) * LongNumber(-2), LongNumber(4)),
+		"(-2) * (-2) = 4"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(0) * LongNumber(10), LongNumber(0)), "0 * x = 0"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(10) * LongNumber(0), LongNumber(0)), "x * 0 = 0"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(10.25L) * LongNumber(1), LongNumber(10.25L)),
+		"x * 1 = x"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(1) * LongNumber(10.25L), LongNumber(10.25L)),
+		"1 * x = x"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(0.25L) * LongNumber(0.25L), LongNumber(0.0625L)),
+		"0.25 * 0.25 = 0.0625"
+	);
+	testerArithmetics.registerTest(
+		isEquals(
+			LongNumber(-0.25L, 4) * LongNumber(-0.25L, 4), LongNumber(0.0625L)
+		),
+		"(-0.25) * (-0.25) = 0.0625 (with precision = 4)"
+	);
+	testerArithmetics.registerTest(
+		isEquals(
+			LongNumber(0.25L, 3) * LongNumber(0.25L, 3), LongNumber(0.0625L)
+		),
+		"0.25 * 0.25 = 0.0 (with precision = 3, which is too little)"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(10) * LongNumber(0.25L), LongNumber(2.5L)),
+		"10 * 0.25 = 2.5 (Fraction -> whole carry)"
 	);
 	success &= testerArithmetics.runTests();
 

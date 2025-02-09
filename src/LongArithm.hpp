@@ -33,12 +33,16 @@ class LongNumber {
 
 	void printChunks(void) const;
 	const std::string toString(void) const;
+	void setPrecision(uint32_t precision);
 
 	std::strong_ordering operator<=>(const LongNumber &other) const;
 	bool operator==(const LongNumber &other) const;
 
 	LongNumber operator+(const LongNumber &other) const;
 	LongNumber operator-(const LongNumber &other) const;
+	LongNumber operator*(const LongNumber &other) const;
+	LongNumber operator/(const LongNumber &other) const;
+
 	LongNumber operator-() const;
 };
 LongNumber operator""_longnum(long double value);
