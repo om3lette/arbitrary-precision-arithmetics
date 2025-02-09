@@ -25,7 +25,6 @@ class LongNumber {
 	void fromString(const std::string &input, uint32_t fractionalBits);
 
   public:
-	LongNumber(int input, int _fractionBits = 0);
 	LongNumber(long double input, int _fractionBits = 96);
 
 	LongNumber(const std::string input, int _fractionBits);
@@ -37,6 +36,9 @@ class LongNumber {
 
 	std::strong_ordering operator<=>(const LongNumber &other) const;
 	bool operator==(const LongNumber &other) const;
+
+	LongNumber &operator<<=(int shift);
+	LongNumber &operator>>=(int shift);
 
 	LongNumber operator+(const LongNumber &other) const;
 	LongNumber operator-(const LongNumber &other) const;

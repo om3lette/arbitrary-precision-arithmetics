@@ -11,11 +11,10 @@
 
 namespace LongArithm {
 void LongNumber::truncateWholePart(void) {
-	while (chunks.size() - getFractionChunks() > 1 && chunks.back() == 0)
+	while (chunks.size() - getFractionChunks() > 0 && chunks.back() == 0)
 		chunks.pop_back();
 }
 void LongNumber::allocateFraction(void) {
-	chunks = std::vector<uint32_t>();
 	int fracChunks = getFractionChunks();
 	while (chunks.size() < fracChunks) chunks.push_back(0);
 }
@@ -24,23 +23,6 @@ LongNumber operator""_longnum(long double number) { return LongNumber(number); }
 
 LongNumber::LongNumber(const std::string input, int _fractionBits) {
 	fromString(input, _fractionBits);
-}
-LongNumber::LongNumber(int input, int _fractionBits) {
-	fractionBits = _fractionBits;
-	sign = input < 0 ? -1 : 1;
-	input = abs(input);
-	allocateFraction();
-
-	uint32_t chunk = 0;
-	int digit = 0;
-	int i = 0;
-	while (input != 0) {
-		digit = input % 2;
-		if (digit != 0) chunk |= (1UL << i);
-		input /= 2;
-		i++;
-	}
-	if (chunk != 0) chunks.push_back(chunk);
 }
 
 LongNumber::LongNumber(long double input, int _fractionBits) {
@@ -321,6 +303,60 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 	// Set precision to max (not rounding by digitsPerChunk)
 	result.setPrecision(std::max(fractionBits, other.fractionBits));
 	return result;
+}
+
+LongNumber &LongNumber::operator<<=(int shift) {
+	if (shift == 0) return *this;
+	if (shift < 0) {
+		*this >>= -shift;
+		return *this;
+	};
+
+	uint32_t chunkShift = shift / 32;
+	uint32_t bitShift = shift % 32;
+
+	if (chunkShift > 0) chunks.insert(chunks.begin(), chunkShift, 0);
+	if (bitShift == 0) return *this;
+
+	uint32_t carry = 0;
+	for (size_t i = 0; i < chunks.size(); i++) {
+		uint32_t newCarry = chunks[i] >> (32 - bitShift);
+		chunks[i] = (chunks[i] << bitShift) | carry;
+		carry = newCarry;
+	}
+
+	if (carry) chunks.push_back(carry);
+	return *this;
+}
+LongNumber &LongNumber::operator>>=(int shift) {
+	if (shift == 0) return *this;
+	if (shift < 0) {
+		*this <<= -shift;
+		return *this;
+	};
+
+	uint32_t chunkShift = shift / 32;
+	uint32_t bitShift = shift % 32;
+
+	if (chunkShift >= chunks.size()) {
+		chunks.clear();
+		allocateFraction();
+		return *this;
+	}
+	// Remove the first `chunkShift` chunks
+	chunks.erase(chunks.begin(), chunks.begin() + chunkShift);
+	allocateFraction();
+	if (bitShift == 0) return *this;
+
+	uint32_t carry = 0;
+	for (int i = chunks.size() - 1; i >= 0; i--) {
+		// 0 <= bitShift < 32 No UB
+		uint32_t newCarry = chunks[i] << (32 - bitShift);
+		chunks[i] = (chunks[i] >> bitShift) | carry;
+		carry = newCarry;
+	}
+	truncateWholePart();
+	return *this;
 }
 
 // Debug purposes only

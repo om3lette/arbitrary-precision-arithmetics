@@ -16,13 +16,13 @@ int main(void) {
 	bool success = true;
 
 	// -------------------------------------------------------------------
-	test::Tester testerInt("Int constructor");
+	test::Tester testerInt("Int->long double constructor");
 	LongNumber num3_1 = LongNumber(101, 0);
 	LongNumber num3_2 = LongNumber(101, 2);
-	LongNumber num3_4 = LongNumber(115);
-	LongNumber num3_5 = LongNumber(-115);
-	LongNumber num3_3 = LongNumber(std::numeric_limits<int>::max());
-	LongNumber num3_6 = LongNumber(std::numeric_limits<int>::min());
+	LongNumber num3_4 = LongNumber(115, 0);
+	LongNumber num3_5 = LongNumber(-115, 0);
+	LongNumber num3_3 = LongNumber(std::numeric_limits<int>::max(), 0);
+	LongNumber num3_6 = LongNumber(std::numeric_limits<int>::min(), 0);
 
 	testerInt.registerTest(
 		isEquals(num3_1.toString(), std::string("1100101")), "No fraction (101)"
@@ -155,7 +155,6 @@ int main(void) {
 	success &= testerExcep.runTests();
 
 	// -------------------------------------------------------------------
-	// TODO: Add tests for comparison on number with multiple chunks
 	test::Tester testerSpaceshipBasic("Comparisons one chunk int");
 	testerSpaceshipBasic.registerTest(
 		[]() { return LongNumber(0.0L) == LongNumber(0); }, "0.0L = 0"
@@ -244,6 +243,43 @@ int main(void) {
 		"Equal numbers with different precision"
 	);
 	success &= testerSpaceshipAdvanced.runTests();
+
+	test::Tester testerShifts("Bitwise shifts <<=, =>>");
+	testerShifts.registerTest(
+		isEquals(LongNumber(1.0L) <<= 1, LongNumber(2.0L)), "1 <<= 1"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(1.0L) <<= 1, LongNumber(1.0L) >>= -1),
+		"(1 <<= 1) == (1 >>= -1)"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(1.0L) >>= -1, LongNumber(1.0L) <<= 1),
+		"(1 >>= -1) == (1 <<= 1)"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(1) <<= 31, LongNumber(1LL << 31)), "1 <<= 31"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(1) >>= 1, LongNumber(0.5L)),
+		"1 >>= 1 (carry to fraction)"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(1) <<= 33, LongNumber(1LL << 33)),
+		"1 <<= 33 (carry)"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(1LL << 32) >>= 1, LongNumber(1LL << 31)),
+		"2^32 >>= 1 (carry)"
+	);
+	testerShifts.registerTest(
+		isEquals(
+			(LongNumber(1, 31) >>= 31).toString(),
+			std::string(".0000000000000000000000000000001")
+		),
+		"1 >>= 31"
+	);
+
+	success &= testerShifts.runTests();
 
 	// -------------------------------------------------------------------
 	test::Tester testerArithmetics("Operators +, -, *, /");
