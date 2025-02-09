@@ -121,40 +121,6 @@ int main(void) {
 	success &= testerStr.runTests();
 
 	// -------------------------------------------------------------------
-	test::Tester testerExcep("Exception tests");
-	testerExcep.registerTest(
-		[]() {
-			LongNumber("20.1", 3);
-			return true;
-		},
-		"Impossible digit (2) in whole part", true
-	);
-
-	testerExcep.registerTest(
-		[]() {
-			LongNumber("10.2", 3);
-			return true;
-		},
-		"Impossible digit (2) in fraction part", true
-	);
-	testerExcep.registerTest(
-		[]() {
-			LongNumber("H0.1", 3);
-			return true;
-		},
-		"Impossible digit (H) in whole part", true
-	);
-	testerExcep.registerTest(
-		[]() {
-			LongNumber("10.H", 3);
-			return true;
-		},
-		"Impossible digit (H) in fraction part", true
-	);
-
-	success &= testerExcep.runTests();
-
-	// -------------------------------------------------------------------
 	test::Tester testerSpaceshipBasic("Comparisons one chunk int");
 	testerSpaceshipBasic.registerTest(
 		[]() { return LongNumber(0.0L) == LongNumber(0); }, "0.0L = 0"
@@ -359,6 +325,33 @@ int main(void) {
 		"10 * 0.25 = 2.5 (Fraction -> whole carry)"
 	);
 
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(4) / LongNumber(2), LongNumber(2)), "4 / 2 = 2"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(32) / LongNumber(1), LongNumber(32)), "x / 1 = x"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(32) / LongNumber(-1), LongNumber(-32)),
+		"x / (-1) = x"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(5) / LongNumber(2), LongNumber(2.5L)), "5 / 2"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(4) / 2, LongNumber(2)), "4 / 2 = 2"
+	);
+	testerArithmetics.registerTest(
+		isEquals(LongNumber(4) / 0.5, LongNumber(8)), "4 / 0.5 = 8"
+	);
+	testerArithmetics.registerTest(
+		isEquals(
+			(LongNumber(22, 32) / LongNumber(7, 32)).toString(),
+			std::string("11.00100100100100100100100100100100")
+		),
+		"22 / 7 (32 bits precision)"
+	);
+
 	success &= testerArithmetics.runTests();
 
 	// -------------------------------------------------------------------
@@ -394,6 +387,46 @@ int main(void) {
 	);
 
 	success &= testerCompoundArithmetics.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerExcep("Exception tests");
+	testerExcep.registerTest(
+		[]() {
+			LongNumber("20.1", 3);
+			return true;
+		},
+		"Impossible digit (2) in whole part", true
+	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber("10.2", 3);
+			return true;
+		},
+		"Impossible digit (2) in fraction part", true
+	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber("H0.1", 3);
+			return true;
+		},
+		"Impossible digit (H) in whole part", true
+	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber("10.H", 3);
+			return true;
+		},
+		"Impossible digit (H) in fraction part", true
+	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber(32) / 0;
+			return true;
+		},
+		"x / 0 = Error", true
+	);
+
+	success &= testerExcep.runTests();
 
 	if (!success) throw std::logic_error("Some tests failed!");
 	std::cout << "All tests passed successfully!" << std::endl;

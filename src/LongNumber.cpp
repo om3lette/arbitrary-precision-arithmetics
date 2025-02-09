@@ -22,7 +22,12 @@ void LongNumber::allocateFraction(void) {
 
 LongNumber operator""_longnum(long double number) { return LongNumber(number); }
 
-LongNumber::LongNumber() { LongNumber(0.0L); }
+LongNumber::LongNumber() {
+	// Default to 0.0L
+	sign = 1;
+	fractionBits = 96;
+	allocateFraction();
+}
 LongNumber::LongNumber(const std::string input, int _fractionBits) {
 	fromString(input, _fractionBits);
 }
@@ -31,6 +36,8 @@ LongNumber::LongNumber(long double input, int _fractionBits) {
 	input = abs(input);
 	fractionBits = _fractionBits;
 	allocateFraction();
+
+	if (input == 0) return;
 
 	long double wholePart;
 	long double fracPart = std::modf(input, &wholePart);
@@ -158,11 +165,6 @@ const std::string LongArithm::LongNumber::toString(void) const {
 	}
 	return output;
 }
-
-// std::ostream &operator<<(std::ostream &os, const LongNumber &number) {
-// 	os << number.toString();
-// 	return os;
-// }
 
 std::strong_ordering LongNumber::operator<=>(const LongNumber &other) const {
 	// Compare signs
@@ -306,6 +308,58 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 	return result;
 }
 
+void LongNumber::setBit(int index) {
+	int chunkIndex = index / 32;
+	int bitIndex = index % 32;
+	if (chunkIndex >= chunks.size()) {
+		chunks.resize(chunkIndex + 1, 0); // Extend vector if needed
+	}
+	chunks[chunkIndex] |= (1U << bitIndex);
+}
+
+bool LongNumber::getBit(int index) const {
+	int chunkIndex = index / 32;
+	int bitIndex = index % 32;
+	if (chunkIndex >= chunks.size()) return false;
+	return (chunks[chunkIndex] >> bitIndex) & 1;
+}
+
+LongNumber LongNumber::operator/(const LongNumber &other) const {
+	if (other == 0) throw std::invalid_argument("Division by zero");
+
+	uint32_t maxPrecision = std::max(fractionBits, other.fractionBits);
+
+	// Work with absolute values
+	LongNumber dividend = *this;
+	dividend.sign = 1;
+	dividend.setPrecision(maxPrecision);
+
+	LongNumber divisor = other;
+	divisor.sign = 1;
+	divisor.setPrecision(maxPrecision);
+
+	// Shift fraction part (full chunks)
+	dividend <<= getFractionChunks() * digitsPerChunk;
+
+	LongNumber quotient(0.0L, maxPrecision);
+	quotient.sign = sign * other.sign;
+	LongNumber remainder(0.0L, maxPrecision);
+
+	// Bitwise division
+	for (int i = dividend.chunks.size() * 32 - 1; i >= 0; --i) {
+		remainder <<= 1;
+		remainder.chunks[0] |= (dividend.getBit(i) ? 1 : 0);
+
+		if (remainder >= divisor) {
+			remainder -= divisor;
+			quotient.setBit(i);
+		}
+	}
+	// Should not be neccessary, more of a precaution
+	quotient.truncateWholePart();
+	return quotient;
+}
+
 LongNumber &LongNumber::operator+=(const LongNumber &other) {
 	*this = *this + other;
 	return *this;
@@ -318,6 +372,11 @@ LongNumber &LongNumber::operator-=(const LongNumber &other) {
 
 LongNumber &LongNumber::operator*=(const LongNumber &other) {
 	*this = *this * other;
+	return *this;
+}
+
+LongNumber &LongNumber::operator/=(const LongNumber &other) {
+	*this = *this / other;
 	return *this;
 }
 

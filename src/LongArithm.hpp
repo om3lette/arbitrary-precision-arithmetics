@@ -14,6 +14,8 @@ class LongNumber {
 	std::vector<uint32_t> chunks;
 	short sign;
 	uint32_t fractionBits;
+	void setBit(int index);
+	bool getBit(int index) const;
 
 	void allocateFraction(void);
 	void truncateWholePart(void);
@@ -44,10 +46,12 @@ class LongNumber {
 	LongNumber operator+(const LongNumber &other) const;
 	LongNumber operator-(const LongNumber &other) const;
 	LongNumber operator*(const LongNumber &other) const;
+	LongNumber operator/(const LongNumber &other) const;
 
 	LongNumber &operator+=(const LongNumber &other);
 	LongNumber &operator-=(const LongNumber &other);
 	LongNumber &operator*=(const LongNumber &other);
+	LongNumber &operator/=(const LongNumber &other);
 
 	LongNumber operator-() const;
 };
