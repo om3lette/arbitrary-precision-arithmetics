@@ -10,6 +10,7 @@
 #include "LongArithm.hpp"
 
 namespace LongArithm {
+
 void LongNumber::truncateWholePart(void) {
 	while (chunks.size() - getFractionChunks() > 0 && chunks.back() == 0)
 		chunks.pop_back();
@@ -21,10 +22,10 @@ void LongNumber::allocateFraction(void) {
 
 LongNumber operator""_longnum(long double number) { return LongNumber(number); }
 
+LongNumber::LongNumber() { LongNumber(0.0L); }
 LongNumber::LongNumber(const std::string input, int _fractionBits) {
 	fromString(input, _fractionBits);
 }
-
 LongNumber::LongNumber(long double input, int _fractionBits) {
 	sign = input < 0 ? -1 : 1;
 	input = abs(input);
@@ -158,10 +159,10 @@ const std::string LongArithm::LongNumber::toString(void) const {
 	return output;
 }
 
-std::ostream &operator<<(std::ostream &os, const LongNumber &number) {
-	os << number.toString();
-	return os;
-}
+// std::ostream &operator<<(std::ostream &os, const LongNumber &number) {
+// 	os << number.toString();
+// 	return os;
+// }
 
 std::strong_ordering LongNumber::operator<=>(const LongNumber &other) const {
 	// Compare signs
@@ -305,6 +306,21 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 	return result;
 }
 
+LongNumber &LongNumber::operator+=(const LongNumber &other) {
+	*this = *this + other;
+	return *this;
+}
+
+LongNumber &LongNumber::operator-=(const LongNumber &other) {
+	*this = *this - other;
+	return *this;
+}
+
+LongNumber &LongNumber::operator*=(const LongNumber &other) {
+	*this = *this * other;
+	return *this;
+}
+
 LongNumber &LongNumber::operator<<=(int shift) {
 	if (shift == 0) return *this;
 	if (shift < 0) {
@@ -357,6 +373,14 @@ LongNumber &LongNumber::operator>>=(int shift) {
 	}
 	truncateWholePart();
 	return *this;
+}
+LongNumber operator<<(LongNumber lhs, int shift) {
+	lhs <<= shift;
+	return lhs;
+}
+LongNumber operator>>(LongNumber lhs, int shift) {
+	lhs >>= shift;
+	return lhs;
 }
 
 // Debug purposes only

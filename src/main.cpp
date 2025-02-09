@@ -358,7 +358,42 @@ int main(void) {
 		isEquals(LongNumber(10) * LongNumber(0.25L), LongNumber(2.5L)),
 		"10 * 0.25 = 2.5 (Fraction -> whole carry)"
 	);
+
 	success &= testerArithmetics.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerCompoundArithmetics("Compound assignment");
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) += 3, LongNumber(5)), "2 += 3"
+	);
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) += 0, LongNumber(2)), "2 += 0"
+	);
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) += -2, LongNumber(0)), "2 += -2"
+	);
+
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) -= 3, LongNumber(-1)), "2 -= 3"
+	);
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) -= 0, LongNumber(2)), "2 -= 0"
+	);
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) -= -2, LongNumber(4)), "2 -= -2"
+	);
+
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) *= 3, LongNumber(6)), "2 *= 3"
+	);
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) *= 0, LongNumber(0)), "2 *= 0"
+	);
+	testerCompoundArithmetics.registerTest(
+		isEquals(LongNumber(2) *= -2, LongNumber(-4)), "2 *= -2"
+	);
+
+	success &= testerCompoundArithmetics.runTests();
 
 	if (!success) throw std::logic_error("Some tests failed!");
 	std::cout << "All tests passed successfully!" << std::endl;
