@@ -29,7 +29,7 @@ LongNumber::LongNumber() {
 	allocateFraction();
 }
 LongNumber::LongNumber(const std::string input, int _fractionBits) {
-	fromString(input, _fractionBits);
+	fromBinaryString(input, _fractionBits);
 }
 LongNumber::LongNumber(long double input, int _fractionBits) {
 	sign = input < 0 ? -1 : 1;
@@ -78,7 +78,7 @@ inline int LongNumber::getFractionChunks(void) const {
 	return std::ceil(static_cast<long double>(fractionBits) / digitsPerChunk);
 }
 
-void LongNumber::parseString(const std::string &input) {
+void LongNumber::convertBinaryString(const std::string &input) {
 	if (input.size() == 0) return;
 	// From the least significant to the most significant
 	long long i = input.size() - 1;
@@ -102,7 +102,9 @@ void LongNumber::parseString(const std::string &input) {
 	chunks.push_back(curChunk);
 }
 
-void LongNumber::fromString(const std::string &input, uint32_t _fractionBits) {
+void LongNumber::fromBinaryString(
+	const std::string &input, uint32_t _fractionBits
+) {
 	fractionBits = _fractionBits;
 
 	// Divide string into whole and fraction (after decimal point) parts
@@ -125,12 +127,12 @@ void LongNumber::fromString(const std::string &input, uint32_t _fractionBits) {
 		fractionPartStr.size(),
 		rem == 32 || fractionPartStr.size() == 0 ? 0 : 32 - rem, '0'
 	);
-	parseString(fractionPartStr);
+	convertBinaryString(fractionPartStr);
 	while (chunks.size() < getFractionChunks()) chunks.push_back(0);
 
 	rem = wholePartStr.size() % 32;
 	wholePartStr.insert(0, rem == 32 ? 0 : 32 - rem, '0');
-	parseString(wholePartStr);
+	convertBinaryString(wholePartStr);
 	// Remove trailing zeros
 	truncateWholePart();
 }

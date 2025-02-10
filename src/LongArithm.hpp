@@ -24,8 +24,9 @@ class LongNumber {
 	inline char digitToChar(const int d) const;
 	inline int getFractionChunks(void) const;
 
-	void parseString(const std::string &input);
-	void fromString(const std::string &input, uint32_t fractionalBits);
+	// Used as a helper for fromBinaryString
+	void convertBinaryString(const std::string &input);
+	void fromBinaryString(const std::string &input, uint32_t fractionalBits);
 
   public:
 	LongNumber();
@@ -36,9 +37,10 @@ class LongNumber {
 	LongNumber &operator=(const LongNumber other);
 	~LongNumber() = default;
 
+	void setPrecision(uint32_t precision);
+
 	void printChunks(void) const;
 	const std::string toString(void) const;
-	void setPrecision(uint32_t precision);
 
 	std::strong_ordering operator<=>(const LongNumber &other) const;
 	bool operator==(const LongNumber &other) const;
