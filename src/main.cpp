@@ -8,10 +8,8 @@ using namespace LongArithm;
 using namespace test;
 
 int main(void) {
-	// TODO: Current precision loss when reading from float on
-	// conversion example 0.25000000000000000001_longnum ==
-	// 0.25000000000000000000_longnum => true Happens on 19th digit after
-	// decimal point
+	// Precision loss when converting from long double from 19th digit after decimal point
+	// E.g 0.25000000000000000001_longnum == 0.25000000000000000000_longnum
 
 	bool success = true;
 
@@ -90,32 +88,32 @@ int main(void) {
 
 	// -------------------------------------------------------------------
 	test::Tester testerStr("String constructor");
-	LongNumber num1 = LongNumber("1.001000000000000000000000000000001", 3);
-	LongNumber num2 = LongNumber("1.001000000000000000000000000000001", 33);
-	LongNumber num4 = LongNumber("00101", 0);
-	LongNumber num5 = LongNumber("00101.01", 2);
-	LongNumber num6_1 = LongNumber("0.01", 2);
 	testerStr.registerTest(
-		isEquals(num1.toString(), std::string("1.001")),
+		isEquals(
+			LongNumber("1.001000000000000000000000000000001", 3).toString(),
+			std::string("1.001")
+		),
 		"Fraction exceeding limit"
 	);
 	testerStr.registerTest(
 		isEquals(
-			num2.toString(), std::string("1.001000000000000000000000000000001")
+			LongNumber("1.001000000000000000000000000000001", 33).toString(),
+			std::string("1.001000000000000000000000000000001")
 		),
 		"Exact fraction limit multiple chunks"
 	);
 
 	testerStr.registerTest(
-		isEquals(num5.toString(), std::string("101.01")),
+		isEquals(LongNumber("00101.01", 2).toString(), std::string("101.01")),
 		"Trailing zeros in whole part"
 	);
 	testerStr.registerTest(
-		isEquals(num4.toString(), std::string("101")),
+		isEquals(LongNumber("00101", 0).toString(), std::string("101")),
 		"No fraction with trailing zeros"
 	);
 	testerStr.registerTest(
-		isEquals(num6_1.toString(), std::string(".01")), "Zero as whole part"
+		isEquals(LongNumber("0.01", 2).toString(), std::string(".01")),
+		"Zero as whole part"
 	);
 
 	success &= testerStr.runTests();
@@ -248,7 +246,7 @@ int main(void) {
 	success &= testerShifts.runTests();
 
 	// -------------------------------------------------------------------
-	test::Tester testerAddition("Operators + -");
+	test::Tester testerAddition("Operators +, -");
 	testerAddition.registerTest(
 		isEquals(LongNumber(0) + LongNumber(10), LongNumber(10)), "0 + x = x"
 	);

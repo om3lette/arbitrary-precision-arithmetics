@@ -28,10 +28,10 @@ LongNumber::LongNumber() {
 	fractionBits = 96;
 	allocateFraction();
 }
-LongNumber::LongNumber(const std::string input, int _fractionBits) {
+LongNumber::LongNumber(const std::string input, uint32_t _fractionBits) {
 	fromBinaryString(input, _fractionBits);
 }
-LongNumber::LongNumber(long double input, int _fractionBits) {
+LongNumber::LongNumber(long double input, uint32_t _fractionBits) {
 	sign = input < 0 ? -1 : 1;
 	input = abs(input);
 	fractionBits = _fractionBits;
@@ -74,7 +74,7 @@ void LongNumber::setPrecision(uint32_t _precision) {
 }
 
 // Calculate how many chunks are storing after decimal point values
-inline int LongNumber::getFractionChunks(void) const {
+inline u_int32_t LongNumber::getFractionChunks(void) const {
 	return std::ceil(static_cast<long double>(fractionBits) / digitsPerChunk);
 }
 
@@ -185,8 +185,7 @@ std::strong_ordering LongNumber::operator<=>(const LongNumber &other) const {
 		return (sign == 1) ? (wholeSizeThis <=> wholeSizeOther)
 						   : (wholeSizeOther <=> wholeSizeThis);
 
-	// Compare from most significant chunk downwards to account for potential
-	// precision mismatch
+	// Compare from most significant chunk downwards to account for potential precision mismatch
 	size_t maxSize = std::max(chunks.size(), other.chunks.size());
 	for (size_t i = 0; i < maxSize; i++) {
 		// If length is different assume missing chunk = 0
@@ -283,10 +282,12 @@ LongNumber LongNumber::operator-(const LongNumber &other) const {
 }
 
 LongNumber LongNumber::operator*(const LongNumber &other) const {
-	// TODO: Constructor only accepts uint32_t
 	// Round to digitsPerChunk
-	uint64_t newPrecision =
-		(getFractionChunks() + other.getFractionChunks()) * digitsPerChunk;
+	// Prevent overflow of uint32_t by picking min
+	uint32_t newPrecision = std::min(
+		std::numeric_limits<u_int32_t>::max(),
+		(getFractionChunks() + other.getFractionChunks()) * digitsPerChunk
+	);
 	LongNumber result(0.0L, newPrecision);
 	result.sign = sign * other.sign;
 

@@ -22,7 +22,7 @@ class LongNumber {
 	void truncateWholePart(void);
 
 	inline char digitToChar(const int d) const;
-	inline int getFractionChunks(void) const;
+	inline u_int32_t getFractionChunks(void) const;
 
 	// Used as a helper for fromBinaryString
 	void convertBinaryString(const std::string &input);
@@ -30,8 +30,8 @@ class LongNumber {
 
   public:
 	LongNumber();
-	LongNumber(long double input, int _fractionBits = 96);
-	LongNumber(const std::string input, int _fractionBits);
+	LongNumber(long double input, uint32_t fractionBits = 96);
+	LongNumber(const std::string input, uint32_t _fractionBits);
 
 	LongNumber(const LongNumber &other) = default;
 	LongNumber &operator=(const LongNumber other);

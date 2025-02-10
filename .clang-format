@@ -8,6 +8,7 @@ UseTab: Always
 AllowShortIfStatementsOnASingleLine: true
 AllowShortBlocksOnASingleLine: Empty
 AllowShortLoopsOnASingleLine: true
+ReflowComments: false
 ColumnLimit: 80
 
 AlignAfterOpenBracket: BlockIndent
