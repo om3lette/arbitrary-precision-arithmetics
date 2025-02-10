@@ -14,6 +14,7 @@ class LongNumber {
 	std::vector<uint32_t> chunks;
 	short sign;
 	uint32_t fractionBits;
+
 	void setBit(int index);
 	bool getBit(int index) const;
 
@@ -31,6 +32,8 @@ class LongNumber {
 	LongNumber(long double input, int _fractionBits = 96);
 	LongNumber(const std::string input, int _fractionBits);
 
+	LongNumber(const LongNumber &other) = default;
+	LongNumber &operator=(const LongNumber other);
 	~LongNumber() = default;
 
 	void printChunks(void) const;

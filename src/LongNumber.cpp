@@ -442,6 +442,13 @@ LongNumber operator>>(LongNumber lhs, int shift) {
 	return lhs;
 }
 
+LongNumber &LongNumber::operator=(const LongNumber other) {
+	sign = other.sign;
+	fractionBits = other.fractionBits;
+	chunks = other.chunks;
+	return *this;
+}
+
 // Debug purposes only
 void LongNumber::printChunks(void) const {
 	int fractionChunks = getFractionChunks();

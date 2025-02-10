@@ -428,6 +428,43 @@ int main(void) {
 
 	success &= testerExcep.runTests();
 
+	// -------------------------------------------------------------------
+	test::Tester testerAssignment("Copy tests");
+	testerAssignment.registerTest(
+		[]() {
+			LongNumber x = LongNumber(10.0L);
+			LongNumber test(x);
+			return test == x;
+		},
+		"10.0 copy"
+	);
+	testerAssignment.registerTest(
+		[]() {
+			LongNumber x = LongNumber(-10.0L);
+			LongNumber test(x);
+			return test == x;
+		},
+		"-10.0 copy"
+	);
+	testerAssignment.registerTest(
+		[]() {
+			LongNumber x = LongNumber(0.0L);
+			LongNumber test(x);
+			return test == x;
+		},
+		"0.0 copy"
+	);
+	testerAssignment.registerTest(
+		[]() {
+			LongNumber x = LongNumber(std::numeric_limits<long double>::min());
+			LongNumber test(x);
+			return test == x;
+		},
+		"long double min copy (multiple chunks)"
+	);
+
+	success &= testerAssignment.runTests();
+
 	if (!success) throw std::logic_error("Some tests failed!");
 	std::cout << "All tests passed successfully!" << std::endl;
 	return 0;
