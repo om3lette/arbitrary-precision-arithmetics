@@ -11,73 +11,54 @@
 
 namespace LongArithm {
 
-void LongNumber::truncateWholePart(void) {
-	while (chunks.size() - getFractionChunks() > 0 && chunks.back() == 0)
-		chunks.pop_back();
+// *BITWISE OPERATIONS*
+
+void LongNumber::setBit(int index) {
+	int chunkIndex = index / 32;
+	int bitIndex = index % 32;
+	if (chunkIndex >= chunks.size()) {
+		// Extend vector if needed
+		chunks.resize(chunkIndex + 1, 0);
+	}
+	chunks[chunkIndex] |= (1U << bitIndex);
 }
+
+bool LongNumber::getBit(int index) const {
+	int chunkIndex = index / 32;
+	int bitIndex = index % 32;
+	if (chunkIndex >= chunks.size()) return false;
+	return (chunks[chunkIndex] >> bitIndex) & 1;
+}
+
+// *MEMORY UTILS*
+
+// Allocates memory for `getFractionChunks()` chunks
+// 1) Is usually called on an empty vector during initialization
+// 2) Makes sure that there are at least `getFractionChunks()` chunks
 void LongNumber::allocateFraction(void) {
 	int fracChunks = getFractionChunks();
 	while (chunks.size() < fracChunks) chunks.push_back(0);
 }
-
-LongNumber operator""_longnum(long double number) { return LongNumber(number); }
-
-LongNumber::LongNumber() {
-	// Default to 0.0L
-	sign = 1;
-	fractionBits = 96;
-	allocateFraction();
-}
-LongNumber::LongNumber(const std::string input, uint32_t _fractionBits) {
-	fromBinaryString(input, _fractionBits);
-}
-LongNumber::LongNumber(long double input, uint32_t _fractionBits) {
-	sign = input < 0 ? -1 : 1;
-	input = abs(input);
-	fractionBits = _fractionBits;
-	allocateFraction();
-
-	if (input == 0) return;
-
-	long double wholePart;
-	long double fracPart = std::modf(input, &wholePart);
-	while (wholePart >= 1) {
-		chunks.push_back(
-			static_cast<uint32_t>(std::fmod(wholePart, (1ULL << 32)))
-		);
-		wholePart /= (1ULL << 32);
-	}
-	int i = 0;
-	int fracChunks = getFractionChunks();
-	while (fracPart != 0 && i < fracChunks) {
-		fracPart *= (1ULL << 32);
-		uint32_t chunk = static_cast<uint32_t>(fracPart);
-		chunks[fracChunks - i - 1] = chunk;
-		fracPart -= chunk;
-		i++;
-	}
+// Removes leading zeros
+// Will remove rightmost zeros in `chunks` as number is stored in little endian
+void LongNumber::truncateWholePart(void) {
+	while (chunks.size() - getFractionChunks() > 0 && chunks.back() == 0)
+		chunks.pop_back();
 }
 
+// *CONVERSION UTILS*
+
+// Converts digit to corresponding chat by adding `'0'`
 inline char LongNumber::digitToChar(const int d) const { return d + '0'; }
-void LongNumber::setPrecision(uint32_t _precision) {
-	uint32_t oldFracChunks = getFractionChunks();
-	fractionBits = _precision;
-
-	int chunkDif = getFractionChunks() - oldFracChunks;
-	if (chunkDif == 0) return;
-
-	if (chunkDif > 0)
-		chunks.insert(chunks.begin(), chunkDif, 0);
-	else
-		// chunkDif < 0 => chunks.begin() - chunkDif (not +)
-		chunks.erase(chunks.begin(), chunks.begin() - chunkDif);
-}
-
-// Calculate how many chunks are storing after decimal point values
+// Calculates how many chunks are storing number's fraction part
 inline u_int32_t LongNumber::getFractionChunks(void) const {
 	return std::ceil(static_cast<long double>(fractionBits) / digitsPerChunk);
 }
 
+// *CREATING FROM STRING*
+// Helper for `fromBinaryString`
+// Takes binary string not containing `.` symbol and inserts conversion result into `chunks`
+// As a result fraction must be handled first, otherwise chunk order will be ruined
 void LongNumber::convertBinaryString(const std::string &input) {
 	if (input.size() == 0) return;
 	// From the least significant to the most significant
@@ -101,7 +82,8 @@ void LongNumber::convertBinaryString(const std::string &input) {
 	}
 	chunks.push_back(curChunk);
 }
-
+// Initializes `sign`, `fractionBits`, `chunks` from a given binary string
+// Throws `std::invalid argument` if digits outside of base's scope are present
 void LongNumber::fromBinaryString(
 	const std::string &input, uint32_t _fractionBits
 ) {
@@ -137,6 +119,84 @@ void LongNumber::fromBinaryString(
 	truncateWholePart();
 }
 
+// *USER DEFINED LITERALS*
+
+LongNumber operator""_longnum(long double number) { return LongNumber(number); }
+
+// *CONSTRUCTORS*
+
+LongNumber::LongNumber() {
+	// Default to 0.0L
+	sign = 1;
+	fractionBits = 96;
+	allocateFraction();
+}
+LongNumber::LongNumber(long double input, uint32_t _fractionBits) {
+	sign = input < 0 ? -1 : 1;
+	input = abs(input);
+	fractionBits = _fractionBits;
+	allocateFraction();
+
+	if (input == 0) return;
+
+	long double wholePart;
+	long double fracPart = std::modf(input, &wholePart);
+	while (wholePart >= 1) {
+		chunks.push_back(
+			static_cast<uint32_t>(std::fmod(wholePart, (1ULL << 32)))
+		);
+		wholePart /= (1ULL << 32);
+	}
+	int i = 0;
+	int fracChunks = getFractionChunks();
+	while (fracPart != 0 && i < fracChunks) {
+		fracPart *= (1ULL << 32);
+		uint32_t chunk = static_cast<uint32_t>(fracPart);
+		chunks[fracChunks - i - 1] = chunk;
+		fracPart -= chunk;
+		i++;
+	}
+}
+LongNumber::LongNumber(const std::string input, uint32_t _fractionBits) {
+	fromBinaryString(input, _fractionBits);
+}
+
+// *SETTERS*
+
+// Updates `fractionBits`
+// Resizes `chunks` to match new precision
+void LongNumber::setPrecision(uint32_t _precision) {
+	uint32_t oldFracChunks = getFractionChunks();
+	fractionBits = _precision;
+
+	int chunkDif = getFractionChunks() - oldFracChunks;
+	if (chunkDif == 0) return;
+
+	if (chunkDif > 0)
+		chunks.insert(chunks.begin(), chunkDif, 0);
+	else
+		// chunkDif < 0 => chunks.begin() - chunkDif (not +)
+		chunks.erase(chunks.begin(), chunks.begin() - chunkDif);
+}
+
+// *OUTPUT UTILS*
+
+// Outputs to console `chunks` vector (stored in little endian)
+// Followed by `fractionBits` and `getFractionChunks()`
+void LongNumber::printChunks(void) const {
+	int fractionChunks = getFractionChunks();
+	std::cout << "Chunks (little endian): [";
+	if (getFractionChunks() == 0) std::cout << "-";
+	for (int i = 0; i < chunks.size(); i++) {
+		if (fractionChunks != 0 && i == fractionChunks) std::cout << " | ";
+		std::cout << chunks[i];
+		if (i != fractionChunks - 1 && i != chunks.size() - 1)
+			std::cout << ", ";
+	}
+	if (chunks.size() == getFractionChunks()) std::cout << " | -";
+	std::cout << "] | " << "Precision: " << fractionBits
+			  << ", Fraction chunks: " << getFractionChunks() << std::endl;
+}
 const std::string LongArithm::LongNumber::toString(void) const {
 	std::string output;
 	if (sign == -1) output += '-';
@@ -167,6 +227,8 @@ const std::string LongArithm::LongNumber::toString(void) const {
 	}
 	return output;
 }
+
+// *OPERATORS*
 
 std::strong_ordering LongNumber::operator<=>(const LongNumber &other) const {
 	// Compare signs
@@ -311,22 +373,6 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 	return result;
 }
 
-void LongNumber::setBit(int index) {
-	int chunkIndex = index / 32;
-	int bitIndex = index % 32;
-	if (chunkIndex >= chunks.size()) {
-		chunks.resize(chunkIndex + 1, 0); // Extend vector if needed
-	}
-	chunks[chunkIndex] |= (1U << bitIndex);
-}
-
-bool LongNumber::getBit(int index) const {
-	int chunkIndex = index / 32;
-	int bitIndex = index % 32;
-	if (chunkIndex >= chunks.size()) return false;
-	return (chunks[chunkIndex] >> bitIndex) & 1;
-}
-
 LongNumber LongNumber::operator/(const LongNumber &other) const {
 	if (other == 0) throw std::invalid_argument("Division by zero");
 
@@ -383,6 +429,8 @@ LongNumber &LongNumber::operator/=(const LongNumber &other) {
 	return *this;
 }
 
+// *BIT SHIFTS*
+
 LongNumber &LongNumber::operator<<=(int shift) {
 	if (shift == 0) return *this;
 	if (shift < 0) {
@@ -423,6 +471,7 @@ LongNumber &LongNumber::operator>>=(int shift) {
 	}
 	// Remove the first `chunkShift` chunks
 	chunks.erase(chunks.begin(), chunks.begin() + chunkShift);
+	// Make sure that there are at least `getFractionChunks()` chunks
 	allocateFraction();
 	if (bitShift == 0) return *this;
 
@@ -445,26 +494,12 @@ LongNumber operator>>(LongNumber lhs, int shift) {
 	return lhs;
 }
 
+// *COPY OPERATOR*
+
 LongNumber &LongNumber::operator=(const LongNumber other) {
 	sign = other.sign;
 	fractionBits = other.fractionBits;
 	chunks = other.chunks;
 	return *this;
-}
-
-// Debug purposes only
-void LongNumber::printChunks(void) const {
-	int fractionChunks = getFractionChunks();
-	std::cout << "Chunks (little endian): [";
-	if (getFractionChunks() == 0) std::cout << "-";
-	for (int i = 0; i < chunks.size(); i++) {
-		if (fractionChunks != 0 && i == fractionChunks) std::cout << " | ";
-		std::cout << chunks[i];
-		if (i != fractionChunks - 1 && i != chunks.size() - 1)
-			std::cout << ", ";
-	}
-	if (chunks.size() == getFractionChunks()) std::cout << " | -";
-	std::cout << "] | " << "Precision: " << fractionBits
-			  << ", Fraction chunks: " << getFractionChunks() << std::endl;
 }
 } // namespace LongArithm
