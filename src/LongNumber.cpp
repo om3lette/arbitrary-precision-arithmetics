@@ -14,8 +14,8 @@ namespace LongArithm {
 // *BITWISE OPERATIONS*
 
 void LongNumber::setBit(int index) {
-	int chunkIndex = index / 32;
-	int bitIndex = index % 32;
+	int chunkIndex = index / digitsPerChunk;
+	int bitIndex = index % digitsPerChunk;
 	if (chunkIndex >= chunks.size()) {
 		// Extend vector if needed
 		chunks.resize(chunkIndex + 1, 0);
@@ -24,8 +24,8 @@ void LongNumber::setBit(int index) {
 }
 
 bool LongNumber::getBit(int index) const {
-	int chunkIndex = index / 32;
-	int bitIndex = index % 32;
+	int chunkIndex = index / digitsPerChunk;
+	int bitIndex = index % digitsPerChunk;
 	if (chunkIndex >= chunks.size()) return false;
 	return (chunks[chunkIndex] >> bitIndex) & 1;
 }
@@ -67,7 +67,7 @@ void LongNumber::convertBinaryString(const std::string &input) {
 	char c;
 	uint32_t curChunk = 0;
 	while ((c = input[i]), i >= 0) {
-		int indexInChunk = j % 32;
+		int indexInChunk = j % digitsPerChunk;
 		if (indexInChunk % digitsPerChunk == 0 && j != 0) {
 			chunks.push_back(curChunk);
 			curChunk = 0;
@@ -104,16 +104,21 @@ void LongNumber::fromBinaryString(
 	if (sign == -1) wholePartStr = wholePartStr.erase(0, 1);
 
 	// Parse fraction part before whole. So it would be stored at the start
-	short rem = fractionPartStr.size() % 32;
+	short rem = fractionPartStr.size() % digitsPerChunk;
 	fractionPartStr.insert(
 		fractionPartStr.size(),
-		rem == 32 || fractionPartStr.size() == 0 ? 0 : 32 - rem, '0'
+		rem == digitsPerChunk || fractionPartStr.size() == 0
+			? 0
+			: digitsPerChunk - rem,
+		'0'
 	);
 	convertBinaryString(fractionPartStr);
 	while (chunks.size() < getFractionChunks()) chunks.push_back(0);
 
-	rem = wholePartStr.size() % 32;
-	wholePartStr.insert(0, rem == 32 ? 0 : 32 - rem, '0');
+	rem = wholePartStr.size() % digitsPerChunk;
+	wholePartStr.insert(
+		0, rem == digitsPerChunk ? 0 : digitsPerChunk - rem, '0'
+	);
 	convertBinaryString(wholePartStr);
 	// Remove trailing zeros
 	truncateWholePart();
@@ -142,15 +147,15 @@ LongNumber::LongNumber(long double input, uint32_t _fractionBits) {
 	long double wholePart;
 	long double fracPart = std::modf(input, &wholePart);
 	while (wholePart >= 1) {
-		chunks.push_back(
-			static_cast<uint32_t>(std::fmod(wholePart, (1ULL << 32)))
-		);
-		wholePart /= (1ULL << 32);
+		chunks.push_back(static_cast<uint32_t>(
+			std::fmod(wholePart, (1ULL << digitsPerChunk))
+		));
+		wholePart /= (1ULL << digitsPerChunk);
 	}
 	int i = 0;
 	int fracChunks = getFractionChunks();
 	while (fracPart != 0 && i < fracChunks) {
-		fracPart *= (1ULL << 32);
+		fracPart *= (1ULL << digitsPerChunk);
 		uint32_t chunk = static_cast<uint32_t>(fracPart);
 		chunks[fracChunks - i - 1] = chunk;
 		fracPart -= chunk;
@@ -285,7 +290,7 @@ LongNumber LongNumber::operator+(const LongNumber &other) const {
 		if (i < chunks.size()) sum += chunks[i];
 		if (i < other.chunks.size()) sum += other.chunks[i];
 
-		carry = sum >> 32;
+		carry = sum >> digitsPerChunk;
 		result.chunks[i] = static_cast<uint32_t>(sum);
 	}
 	if (carry != 0) result.chunks.push_back(carry);
@@ -331,7 +336,7 @@ LongNumber LongNumber::operator-(const LongNumber &other) const {
 
 		if (diff < 0) {
 			borrow = 1;
-			diff += (1LL << 32);
+			diff += (1LL << digitsPerChunk);
 		} else {
 			borrow = 0;
 		}
@@ -363,7 +368,7 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 			uint64_t mult = static_cast<uint64_t>(chunks[i]) * other.chunks[j] +
 							carry + result.chunks[i + j];
 			result.chunks[i + j] = static_cast<uint32_t>(mult);
-			carry = mult >> 32;
+			carry = mult >> digitsPerChunk;
 		}
 		result.chunks[i + other.chunks.size()] += carry;
 	}
@@ -395,7 +400,7 @@ LongNumber LongNumber::operator/(const LongNumber &other) const {
 	LongNumber remainder(0.0L, maxPrecision);
 
 	// Bitwise division
-	for (int i = dividend.chunks.size() * 32 - 1; i >= 0; --i) {
+	for (int i = dividend.chunks.size() * digitsPerChunk - 1; i >= 0; --i) {
 		remainder <<= 1;
 		remainder.chunks[0] |= (dividend.getBit(i) ? 1 : 0);
 
@@ -438,15 +443,15 @@ LongNumber &LongNumber::operator<<=(int shift) {
 		return *this;
 	};
 
-	uint32_t chunkShift = shift / 32;
-	uint32_t bitShift = shift % 32;
+	uint32_t chunkShift = shift / digitsPerChunk;
+	uint32_t bitShift = shift % digitsPerChunk;
 
 	if (chunkShift > 0) chunks.insert(chunks.begin(), chunkShift, 0);
 	if (bitShift == 0) return *this;
 
 	uint32_t carry = 0;
 	for (size_t i = 0; i < chunks.size(); i++) {
-		uint32_t newCarry = chunks[i] >> (32 - bitShift);
+		uint32_t newCarry = chunks[i] >> (digitsPerChunk - bitShift);
 		chunks[i] = (chunks[i] << bitShift) | carry;
 		carry = newCarry;
 	}
@@ -461,8 +466,8 @@ LongNumber &LongNumber::operator>>=(int shift) {
 		return *this;
 	};
 
-	uint32_t chunkShift = shift / 32;
-	uint32_t bitShift = shift % 32;
+	uint32_t chunkShift = shift / digitsPerChunk;
+	uint32_t bitShift = shift % digitsPerChunk;
 
 	if (chunkShift >= chunks.size()) {
 		chunks.clear();
@@ -477,8 +482,8 @@ LongNumber &LongNumber::operator>>=(int shift) {
 
 	uint32_t carry = 0;
 	for (int i = chunks.size() - 1; i >= 0; i--) {
-		// 0 <= bitShift < 32 No UB
-		uint32_t newCarry = chunks[i] << (32 - bitShift);
+		// 0 <= bitShift < digitsPerChunk No UB
+		uint32_t newCarry = chunks[i] << (digitsPerChunk - bitShift);
 		chunks[i] = (chunks[i] >> bitShift) | carry;
 		carry = newCarry;
 	}
