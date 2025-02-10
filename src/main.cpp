@@ -17,34 +17,34 @@ int main(void) {
 
 	// -------------------------------------------------------------------
 	test::Tester testerInt("Int->long double constructor");
-	LongNumber num3_1 = LongNumber(101, 0);
-	LongNumber num3_2 = LongNumber(101, 2);
-	LongNumber num3_4 = LongNumber(115, 0);
-	LongNumber num3_5 = LongNumber(-115, 0);
-	LongNumber num3_3 = LongNumber(std::numeric_limits<int>::max(), 0);
-	LongNumber num3_6 = LongNumber(std::numeric_limits<int>::min(), 0);
 
 	testerInt.registerTest(
-		isEquals(num3_1.toString(), std::string("1100101")), "No fraction (101)"
+		isEquals(LongNumber(101, 0).toString(), std::string("1100101")),
+		"No fraction (101)"
 	);
 	testerInt.registerTest(
-		isEquals(num3_2.toString(), std::string("1100101.00")), "With precision"
+		isEquals(LongNumber(101, 2).toString(), std::string("1100101.00")),
+		"With precision"
 	);
 	testerInt.registerTest(
-		isEquals(num3_4.toString(), std::string("1110011")), "Int 115"
+		isEquals(LongNumber(115, 0).toString(), std::string("1110011")),
+		"Int 115"
 	);
 	testerInt.registerTest(
-		isEquals(num3_5.toString(), std::string("-1110011")), "Int -115"
+		isEquals(LongNumber(-115, 0).toString(), std::string("-1110011")),
+		"Int -115"
 	);
 	testerInt.registerTest(
 		isEquals(
-			num3_3.toString(), std::string("1111111111111111111111111111111")
+			LongNumber(std::numeric_limits<int>::max(), 0).toString(),
+			std::string("1111111111111111111111111111111")
 		),
 		"Int max"
 	);
 	testerInt.registerTest(
 		isEquals(
-			num3_6.toString(), std::string("-10000000000000000000000000000000")
+			LongNumber(std::numeric_limits<int>::min(), 0).toString(),
+			std::string("-10000000000000000000000000000000")
 		),
 		"Int min"
 	);
@@ -248,18 +248,18 @@ int main(void) {
 	success &= testerShifts.runTests();
 
 	// -------------------------------------------------------------------
-	test::Tester testerArithmetics("Operators +, -, *, /");
-	testerArithmetics.registerTest(
+	test::Tester testerAddition("Operators + -");
+	testerAddition.registerTest(
 		isEquals(LongNumber(0) + LongNumber(10), LongNumber(10)), "0 + x = x"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
 		isEquals(LongNumber(-0) + LongNumber(10), LongNumber(10)), "-0 + x = x"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
 		isEquals(LongNumber(10) + LongNumber(20), LongNumber(30)),
 		"10 + 20 = 30 (basic +)"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
 		isEquals(
 			LongNumber(std::numeric_limits<int>::max()) +
 				LongNumber(std::numeric_limits<int>::max()) + LongNumber(2),
@@ -267,84 +267,100 @@ int main(void) {
 		),
 		"int_max + int_max + 2 (carry)"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
 		isEquals(0.5_longnum + 0.5_longnum, 1.0_longnum),
 		"0.5 + 0.5 = 1.0 (float -> whole carry)"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
 		isEquals(-0.5_longnum + 0.5_longnum, 0.0_longnum),
 		"-0.5 + 0.5 = 0 (-a + b -> b - a)"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
 		isEquals(0.5_longnum + -0.5_longnum, 0.0_longnum),
 		"0.5 + -0.5 = 0 (a + (-b) -> a - b)"
 	);
-	testerArithmetics.registerTest(
+	testerAddition.registerTest(
+		isEquals(2.0_longnum - 2.0_longnum, 0.0_longnum), "x - x = 0"
+	);
+	testerAddition.registerTest(
+		isEquals(2.0_longnum - 0.0_longnum, 2.0_longnum), "x - 0 = x"
+	);
+
+	success &= testerAddition.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerMultiplication("Operator *");
+
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(2) * LongNumber(2), LongNumber(4)), "2 * 2 = 4"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(2) * LongNumber(-2), LongNumber(-4)),
 		"2 * (-2) = -4"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(-2) * LongNumber(-2), LongNumber(4)),
 		"(-2) * (-2) = 4"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(0) * LongNumber(10), LongNumber(0)), "0 * x = 0"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(10) * LongNumber(0), LongNumber(0)), "x * 0 = 0"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(10.25L) * LongNumber(1), LongNumber(10.25L)),
 		"x * 1 = x"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(1) * LongNumber(10.25L), LongNumber(10.25L)),
 		"1 * x = x"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(0.25L) * LongNumber(0.25L), LongNumber(0.0625L)),
 		"0.25 * 0.25 = 0.0625"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(
 			LongNumber(-0.25L, 4) * LongNumber(-0.25L, 4), LongNumber(0.0625L)
 		),
 		"(-0.25) * (-0.25) = 0.0625 (with precision = 4)"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(
 			LongNumber(0.25L, 3) * LongNumber(0.25L, 3), LongNumber(0.0625L)
 		),
 		"0.25 * 0.25 = 0.0 (with precision = 3, which is too little)"
 	);
-	testerArithmetics.registerTest(
+	testerMultiplication.registerTest(
 		isEquals(LongNumber(10) * LongNumber(0.25L), LongNumber(2.5L)),
 		"10 * 0.25 = 2.5 (Fraction -> whole carry)"
 	);
 
-	testerArithmetics.registerTest(
+	success &= testerMultiplication.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerDivision("Operator /");
+	testerDivision.registerTest(
 		isEquals(LongNumber(4) / LongNumber(2), LongNumber(2)), "4 / 2 = 2"
 	);
-	testerArithmetics.registerTest(
+	testerDivision.registerTest(
 		isEquals(LongNumber(32) / LongNumber(1), LongNumber(32)), "x / 1 = x"
 	);
-	testerArithmetics.registerTest(
+	testerDivision.registerTest(
 		isEquals(LongNumber(32) / LongNumber(-1), LongNumber(-32)),
 		"x / (-1) = x"
 	);
-	testerArithmetics.registerTest(
+	testerDivision.registerTest(
 		isEquals(LongNumber(5) / LongNumber(2), LongNumber(2.5L)), "5 / 2"
 	);
-	testerArithmetics.registerTest(
+	testerDivision.registerTest(
 		isEquals(LongNumber(4) / 2, LongNumber(2)), "4 / 2 = 2"
 	);
-	testerArithmetics.registerTest(
+	testerDivision.registerTest(
 		isEquals(LongNumber(4) / 0.5, LongNumber(8)), "4 / 0.5 = 8"
 	);
-	testerArithmetics.registerTest(
+	testerDivision.registerTest(
 		isEquals(
 			(LongNumber(22, 32) / LongNumber(7, 32)).toString(),
 			std::string("11.00100100100100100100100100100100")
@@ -352,7 +368,7 @@ int main(void) {
 		"22 / 7 (32 bits precision)"
 	);
 
-	success &= testerArithmetics.runTests();
+	success &= testerDivision.runTests();
 
 	// -------------------------------------------------------------------
 	test::Tester testerCompoundArithmetics("Compound assignment");
