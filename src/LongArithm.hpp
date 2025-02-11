@@ -38,6 +38,7 @@ class LongNumber {
 	~LongNumber() = default;
 
 	void setPrecision(uint32_t precision);
+	uint32_t getChunk(uint32_t index) const;
 
 	void printChunks(void) const;
 	const std::string toString(void) const;

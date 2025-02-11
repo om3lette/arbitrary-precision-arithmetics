@@ -325,9 +325,10 @@ int main(void) {
 		"(-0.25) * (-0.25) = 0.0625 (with precision = 4)"
 	);
 	testerMultiplication.registerTest(
-		isEquals(
-			LongNumber(0.25L, 3) * LongNumber(0.25L, 3), LongNumber(0.0625L)
-		),
+		[]() {
+			return (LongNumber(0.25L, 3) * LongNumber(0.25L, 3)) ==
+				   LongNumber(0.0L);
+		},
 		"0.25 * 0.25 = 0.0 (with precision = 3, which is too little)"
 	);
 	testerMultiplication.registerTest(
@@ -403,7 +404,7 @@ int main(void) {
 	success &= testerCompoundArithmetics.runTests();
 
 	// -------------------------------------------------------------------
-	test::Tester testerExcep("Exception tests");
+	test::Tester testerExcep("Exceptions");
 	testerExcep.registerTest(
 		[]() {
 			LongNumber("20.1", 3);
@@ -478,6 +479,45 @@ int main(void) {
 	);
 
 	success &= testerAssignment.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerPrecision("setPrecision");
+	testerPrecision.registerTest(
+		[]() {
+			LongNumber x(0.5L);
+			x.setPrecision(1);
+			return x.toString() == ".1";
+		},
+		"Lower precision"
+	);
+	testerPrecision.registerTest(
+		[]() {
+			LongNumber x(0.625L);
+			x.setPrecision(1);
+			return x.toString() == ".1";
+		},
+		"Lower precision (overwriting value)"
+	);
+	testerPrecision.registerTest(
+		[]() {
+			LongNumber x(0.5L);
+			x.setPrecision(1);
+			LongNumber y(0.625L);
+			y.setPrecision(1);
+			return x == y;
+		},
+		"Numbers should be equal after precision drop"
+	);
+	testerPrecision.registerTest(
+		[]() {
+			LongNumber x(0.5L, 1);
+			x.setPrecision(3);
+			return x.toString() == ".100";
+		},
+		"Raise precision"
+	);
+
+	success &= testerPrecision.runTests();
 
 	if (!success) throw std::logic_error("Some tests failed!");
 	std::cout << "All tests passed successfully!" << std::endl;

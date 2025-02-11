@@ -166,7 +166,7 @@ LongNumber::LongNumber(const std::string input, uint32_t _fractionBits) {
 	fromBinaryString(input, _fractionBits);
 }
 
-// *SETTERS*
+// *PRECISION HANDLERS*
 
 // Updates `fractionBits`
 // Resizes `chunks` to match new precision
@@ -182,6 +182,19 @@ void LongNumber::setPrecision(uint32_t _precision) {
 	else
 		// chunkDif < 0 => chunks.begin() - chunkDif (not +)
 		chunks.erase(chunks.begin(), chunks.begin() - chunkDif);
+}
+
+// Returns `chunks[index]` with its value adjusted for precision
+// Throws `std::out_of_range` if index is incorrect
+uint32_t LongNumber::getChunk(uint32_t index) const {
+	if (index > chunks.size())
+		throw std::out_of_range("Chunk index out of range");
+	if (index != 0 || (fractionBits % digitsPerChunk) == 0) {
+		return chunks[index];
+	}
+	uint32_t mask = (1UL << (fractionBits % digitsPerChunk)) - 1;
+	uint8_t shift = digitsPerChunk - (fractionBits % digitsPerChunk);
+	return chunks[index] & (mask << shift);
 }
 
 // *OUTPUT UTILS*
@@ -257,9 +270,9 @@ std::strong_ordering LongNumber::operator<=>(const LongNumber &other) const {
 	for (size_t i = 0; i < maxSize; i++) {
 		// If length is different assume missing chunk = 0
 		uint32_t chunkThis =
-			(i < chunks.size()) ? chunks[chunks.size() - i - 1] : 0;
+			(i < chunks.size()) ? getChunk(chunks.size() - i - 1) : 0;
 		uint32_t chunkOther = (i < other.chunks.size())
-								  ? other.chunks[other.chunks.size() - i - 1]
+								  ? other.getChunk(other.chunks.size() - i - 1)
 								  : 0;
 
 		if (chunkThis != chunkOther) {
@@ -355,11 +368,15 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 		std::numeric_limits<u_int32_t>::max(),
 		(getFractionChunks() + other.getFractionChunks()) * digitsPerChunk
 	);
+	uint32_t maxPrecisionBits = std::max(fractionBits, other.fractionBits);
 	LongNumber result(0.0L, newPrecision);
 	result.sign = sign * other.sign;
 
 	// x * 0 = 0
-	if (*this == 0 || other == 0) return result;
+	if (*this == 0 || other == 0) {
+		result.setPrecision(maxPrecisionBits);
+		return result;
+	}
 	result.chunks.resize(chunks.size() + other.chunks.size());
 
 	for (int i = 0; i < chunks.size(); i++) {
@@ -374,7 +391,7 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 	}
 	result.truncateWholePart();
 	// Set precision to max (not rounding by digitsPerChunk)
-	result.setPrecision(std::max(fractionBits, other.fractionBits));
+	result.setPrecision(maxPrecisionBits);
 	return result;
 }
 
