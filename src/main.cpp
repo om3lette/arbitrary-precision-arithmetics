@@ -46,6 +46,9 @@ int main(void) {
 		),
 		"Int min"
 	);
+	testerInt.registerTest(
+		isEquals(LongNumber(0, 0).toString(), std::string("0")), "Int 0"
+	);
 
 	success &= testerInt.runTests();
 

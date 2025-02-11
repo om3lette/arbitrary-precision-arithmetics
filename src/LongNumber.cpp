@@ -230,7 +230,10 @@ const std::string LongArithm::LongNumber::toString(void) const {
 			if (allowOut) output += digitToChar(bit);
 		}
 	}
-	if (fractionBits == 0) return output;
+	if (fractionBits == 0) {
+		if (output.size() == 0) output = "0";
+		return output;
+	}
 	output += '.';
 	for (int i = fractionChunks - 1; i >= 0; i--) {
 		uint32_t curChunk = chunks[i];
