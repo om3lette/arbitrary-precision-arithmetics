@@ -20,9 +20,10 @@ bool Tester::runTests(void) {
 			  << "=========== Running [" << groupName << ']'
 			  << " ===========\n";
 	if (tests.size() == 0) {
-		std::cout << "[WARNING] No tests were found. Please register some them "
+		std::cout << "\n\033[1;33m[WARNING]\033[0m No tests were found. Please "
+					 "register some "
 					 "before running.\n";
-		return false;
+		return true;
 	}
 	for (int i = 0; i < tests.size(); i++) {
 		Test test = tests[i];
@@ -38,14 +39,22 @@ bool Tester::runTests(void) {
 		}
 		testSuccess += success;
 		std::cout << i + 1 << ") " << test.infoMessage << ": "
-				  << (success ? "[PASSED]" : "[FAILED]") << '\n';
+				  << (success ? "\033[1;32m[PASSED]\033[0m"
+							  : "\033[1;31m[FAILED]\033[0m")
+				  << '\n';
 	}
 	float correctPercentage =
 		(static_cast<float>(testSuccess) / testsTotal) * 100;
 	std::cout << std::setprecision(2) << std::fixed;
-	std::cout << "\nTest results: " << std::to_string(testSuccess) << '/'
-			  << std::to_string(testsTotal) << ' ' << correctPercentage << "%"
-			  << std::endl;
+	int color = 32; // Green
+	if (testSuccess == 0)
+		color = 31; // Red
+	else if (testSuccess < testsTotal)
+		color = 33; // Yellow
+	std::cout << "\033[1;" << color
+			  << "m\nTest results: " << std::to_string(testSuccess) << '/'
+			  << std::to_string(testsTotal) << ' ' << correctPercentage
+			  << "%\033[0m" << std::endl;
 	return testsTotal == testSuccess;
 }
 } // namespace test

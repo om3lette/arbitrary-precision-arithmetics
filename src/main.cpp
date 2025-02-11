@@ -1,8 +1,8 @@
-#include <limits>
-
 #include "LongArithm.hpp"
 #include "Tester.hpp"
 #include "utils.hpp"
+#include <limits>
+#include <stdio.h>
 
 using namespace LongArithm;
 using namespace test;
@@ -522,7 +522,8 @@ int main(void) {
 
 	success &= testerPrecision.runTests();
 
-	if (!success) throw std::logic_error("Some tests failed!");
-	std::cout << "All tests passed successfully!" << std::endl;
+	if (!success) throw std::logic_error("\033[1;31mSOME TESTS FAILED!\033[0m");
+	std::cout << "\033[1;32m\nALL TESTS PASSED SUCCESSFULLY!\033[0m\n"
+			  << std::endl;
 	return 0;
 }
