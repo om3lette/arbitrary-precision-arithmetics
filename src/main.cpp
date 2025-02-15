@@ -443,6 +443,13 @@ int main(void) {
 		},
 		"x / 0 = Error", true
 	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber(-5).sqrt();
+			return true;
+		},
+		"sqrt(-5) = Error", true
+	);
 
 	success &= testerExcep.runTests();
 

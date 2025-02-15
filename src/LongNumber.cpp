@@ -232,7 +232,6 @@ LongNumber LongNumber::sqrt(void) const {
 	if (normalisedThis.fractionBits < 96) normalisedThis.setPrecision(96);
 
 	LongNumber guess = LongNumber(1.0L, normalisedThis.fractionBits);
-	std::cout << guess.fractionBits << std::endl;
 	LongNumber prevGuess;
 
 	while (guess != prevGuess) {
