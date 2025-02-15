@@ -184,6 +184,12 @@ void LongNumber::setPrecision(uint32_t _precision) {
 		chunks.erase(chunks.begin(), chunks.begin() - chunkDif);
 }
 
+// Calls `setPrecision` and returns the number
+LongNumber LongNumber::withPrecision(uint32_t precision) {
+	(*this).setPrecision(precision);
+	return *this;
+};
+
 // Returns `chunks[index]` with its value adjusted for precision
 // Throws `std::out_of_range` if index is incorrect
 uint32_t LongNumber::getChunk(uint32_t index) const {
@@ -195,6 +201,49 @@ uint32_t LongNumber::getChunk(uint32_t index) const {
 	uint32_t mask = (1UL << (fractionBits % digitsPerChunk)) - 1;
 	uint8_t shift = digitsPerChunk - (fractionBits % digitsPerChunk);
 	return chunks[index] & (mask << shift);
+}
+
+// *MATH UTILS*
+
+LongNumber LongNumber::pow(uint32_t power) const {
+	if (power == 1) return *this;
+	// Result has the same precision
+	LongNumber result(1, fractionBits);
+	if (power == 0) return result;
+	LongNumber accumulator = *this;
+
+	// Minimize iterations by leveraging the closest power of 2
+	while (power) {
+		if (power & 1) result *= accumulator;
+		accumulator *= accumulator;
+		power >>= 1;
+	}
+	return result;
+}
+
+// Newton-Raphson method for calculating square root
+LongNumber LongNumber::sqrt(void) const {
+	if (sign == -1)
+		throw std::invalid_argument(
+			"Failed to calculate square root: number is negative"
+		);
+	// If integer make room for fraction part to increase accuracy
+	LongNumber normalisedThis = *this;
+	if (normalisedThis.fractionBits < 96) normalisedThis.setPrecision(96);
+
+	LongNumber guess = LongNumber(1.0L, normalisedThis.fractionBits);
+	std::cout << guess.fractionBits << std::endl;
+	LongNumber prevGuess;
+
+	while (guess != prevGuess) {
+		prevGuess = guess;
+		guess += normalisedThis / guess; // guess + S / guess
+		guess >>= 1;					 // guess / 2
+	};
+
+	guess.truncateWholePart();
+	guess.setPrecision(fractionBits);
+	return guess;
 }
 
 // *OUTPUT UTILS*

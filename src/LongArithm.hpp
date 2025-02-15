@@ -31,14 +31,18 @@ class LongNumber {
   public:
 	LongNumber();
 	LongNumber(long double input, uint32_t fractionBits = 96);
-	LongNumber(const std::string input, uint32_t _fractionBits);
+	LongNumber(const std::string input, uint32_t _fractionBits = 96);
 
 	LongNumber(const LongNumber &other) = default;
 	LongNumber &operator=(const LongNumber other);
 	~LongNumber() = default;
 
 	void setPrecision(uint32_t precision);
+	LongNumber withPrecision(uint32_t precision);
 	uint32_t getChunk(uint32_t index) const;
+
+	LongNumber pow(uint32_t power) const;
+	LongNumber sqrt(void) const;
 
 	void printChunks(void) const;
 	const std::string toString(void) const;

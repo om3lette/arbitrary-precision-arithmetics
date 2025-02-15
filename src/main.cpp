@@ -522,6 +522,50 @@ int main(void) {
 
 	success &= testerPrecision.runTests();
 
+	// -------------------------------------------------------------------
+	test::Tester testerPow("Pow");
+	testerPow.registerTest(
+		isEquals(LongNumber(2, 0).pow(10), LongNumber(1024, 0)),
+		"2^10 = 512 (even power)"
+	);
+	testerPow.registerTest(
+		isEquals(LongNumber(2, 0).pow(9), LongNumber(512, 0)),
+		"2^9 = 512 (odd power)"
+	);
+	// clang-format off
+	testerPow.registerTest(
+		isEquals(LongNumber(2, 0).pow(50).toString(), std::string("100000000000000000000000000000000000000000000000000")),
+		"2^50 (exceeding one chunk)"
+	);
+	// clang-format on
+	testerPow.registerTest(
+		isEquals(LongNumber(0.5).pow(4), LongNumber(0.0625)),
+		"0.5 ^ 4 = 0.0625 (fraction)"
+	);
+
+	success &= testerPow.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerSqrt("Square root");
+	testerSqrt.registerTest(
+		isEquals(LongNumber(4, 0).sqrt(), LongNumber(2)), "sqrt(4) = 2"
+	);
+	// clang-format off
+	testerSqrt.registerTest(
+		isEquals(
+			LongNumber("100000000000000000000000000000000000000000000000000").sqrt(),
+			LongNumber("10000000000000000000000000")
+		),
+		"sqrt(2 ^ 50) = 2 ^ 25 (multiple chunks)"
+	);
+	// clang-format on
+	testerSqrt.registerTest(
+		isEquals(LongNumber(0.25).sqrt(), LongNumber(0.5)),
+		"sqrt(0.5 ^ 2) = 0.5"
+	);
+
+	success &= testerSqrt.runTests();
+
 	if (!success) throw std::logic_error("\033[1;31mSOME TESTS FAILED!\033[0m");
 	std::cout << "\033[1;32m\nALL TESTS PASSED SUCCESSFULLY!\033[0m\n"
 			  << std::endl;
