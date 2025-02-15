@@ -13,9 +13,9 @@ namespace LongArithm {
 
 // *BITWISE OPERATIONS*
 
-void LongNumber::setBit(int index) {
-	int chunkIndex = index / digitsPerChunk;
-	int bitIndex = index % digitsPerChunk;
+void LongNumber::setBit(uint32_t index) {
+	uint32_t chunkIndex = index / digitsPerChunk;
+	uint32_t bitIndex = index % digitsPerChunk;
 	if (chunkIndex >= chunks.size()) {
 		// Extend vector if needed
 		chunks.resize(chunkIndex + 1, 0);
@@ -23,9 +23,9 @@ void LongNumber::setBit(int index) {
 	chunks[chunkIndex] |= (1U << bitIndex);
 }
 
-bool LongNumber::getBit(int index) const {
-	int chunkIndex = index / digitsPerChunk;
-	int bitIndex = index % digitsPerChunk;
+bool LongNumber::getBit(uint32_t index) const {
+	uint32_t chunkIndex = index / digitsPerChunk;
+	uint32_t bitIndex = index % digitsPerChunk;
 	if (chunkIndex >= chunks.size()) return false;
 	return (chunks[chunkIndex] >> bitIndex) & 1;
 }
@@ -36,7 +36,7 @@ bool LongNumber::getBit(int index) const {
 // 1) Is usually called on an empty vector during initialization
 // 2) Makes sure that there are at least `getFractionChunks()` chunks
 void LongNumber::allocateFraction(void) {
-	int fracChunks = getFractionChunks();
+	uint32_t fracChunks = getFractionChunks();
 	while (chunks.size() < fracChunks) chunks.push_back(0);
 }
 // Removes leading zeros
@@ -250,10 +250,10 @@ LongNumber LongNumber::sqrt(void) const {
 // Outputs to console `chunks` vector (stored in little endian)
 // Followed by `fractionBits` and `getFractionChunks()`
 void LongNumber::printChunks(void) const {
-	int fractionChunks = getFractionChunks();
+	uint32_t fractionChunks = getFractionChunks();
 	std::cout << "Chunks (little endian): [";
 	if (getFractionChunks() == 0) std::cout << "-";
-	for (int i = 0; i < chunks.size(); i++) {
+	for (uint32_t i = 0; i < chunks.size(); i++) {
 		if (fractionChunks != 0 && i == fractionChunks) std::cout << " | ";
 		std::cout << chunks[i];
 		if (i != fractionChunks - 1 && i != chunks.size() - 1)
@@ -267,10 +267,11 @@ const std::string LongArithm::LongNumber::toString(void) const {
 	std::string output;
 	if (sign == -1) output += '-';
 
-	uint32_t currentChunkIndex = 0;
 	bool allowOut = false;
-	int fractionChunks = getFractionChunks();
-	for (int i = chunks.size() - 1; i >= fractionChunks; i--) {
+	uint32_t fractionChunks = getFractionChunks(); // Already uint32_t
+
+	// Ensure size_t to prevent signed-unsigned mismatches
+	for (size_t i = chunks.size(); i-- > fractionChunks;) {
 		uint32_t curChunk = chunks[i];
 		for (int j = digitsPerChunk - 1; j >= 0; j--) {
 			int bit = ((curChunk & (1UL << j)) >> j);
@@ -278,17 +279,19 @@ const std::string LongArithm::LongNumber::toString(void) const {
 			if (allowOut) output += digitToChar(bit);
 		}
 	}
+
 	if (fractionBits == 0) {
-		if (output.size() == 0) output = "0";
+		if (output.empty()) output = "0";
 		return output;
 	}
 	output += '.';
-	for (int i = fractionChunks - 1; i >= 0; i--) {
+
+	for (size_t i = fractionChunks; i-- > 0;) {
 		uint32_t curChunk = chunks[i];
 		for (int j = digitsPerChunk - 1; j >= 0; j--) {
-			// If fraction bit is exceeded break
-			if ((fractionChunks - i - 1) * digitsPerChunk +
-					(digitsPerChunk - j) >
+			// If precision is exceeded, break
+			if ((fractionChunks - 1 - i) * digitsPerChunk +
+					(digitsPerChunk - 1 - j) >=
 				fractionBits)
 				return output;
 			output += digitToChar((curChunk & (1UL << j)) >> j);
@@ -349,7 +352,7 @@ LongNumber LongNumber::operator+(const LongNumber &other) const {
 	result.chunks.resize(maxSize);
 
 	uint32_t carry = 0;
-	for (int i = 0; i < maxSize; i++) {
+	for (uint32_t i = 0; i < maxSize; i++) {
 		uint64_t sum = carry;
 		if (i < chunks.size()) sum += chunks[i];
 		if (i < other.chunks.size()) sum += other.chunks[i];
@@ -430,9 +433,9 @@ LongNumber LongNumber::operator*(const LongNumber &other) const {
 	}
 	result.chunks.resize(chunks.size() + other.chunks.size());
 
-	for (int i = 0; i < chunks.size(); i++) {
+	for (size_t i = 0; i < chunks.size(); i++) {
 		uint32_t carry = 0;
-		for (int j = 0; j < other.chunks.size(); j++) {
+		for (size_t j = 0; j < other.chunks.size(); j++) {
 			uint64_t mult = static_cast<uint64_t>(chunks[i]) * other.chunks[j] +
 							carry + result.chunks[i + j];
 			result.chunks[i + j] = static_cast<uint32_t>(mult);

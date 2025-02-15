@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <string>
@@ -13,10 +14,10 @@ class Tester {
 		std::string infoMessage;
 		bool isExceptionTest;
 	};
-	std::vector<Test> tests;
 	std::string groupName;
-	int testSuccess;
-	int testsTotal;
+	uint32_t testSuccess;
+	uint32_t testsTotal;
+	std::vector<Test> tests;
 
   public:
 	Tester(std::string groupName);

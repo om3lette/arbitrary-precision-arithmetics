@@ -15,8 +15,8 @@ class LongNumber {
 	short sign;
 	uint32_t fractionBits;
 
-	void setBit(int index);
-	bool getBit(int index) const;
+	void setBit(uint32_t index);
+	bool getBit(uint32_t index) const;
 
 	void allocateFraction(void);
 	void truncateWholePart(void);
