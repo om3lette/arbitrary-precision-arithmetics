@@ -268,7 +268,7 @@ const std::string LongArithm::LongNumber::toString(void) const {
 	if (sign == -1) output += '-';
 
 	bool allowOut = false;
-	uint32_t fractionChunks = getFractionChunks(); // Already uint32_t
+	uint32_t fractionChunks = getFractionChunks();
 
 	// Ensure size_t to prevent signed-unsigned mismatches
 	for (size_t i = chunks.size(); i-- > fractionChunks;) {

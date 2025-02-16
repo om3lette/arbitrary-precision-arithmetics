@@ -22,7 +22,7 @@ int main(void) {
 	);
 	testerInt.registerTest(
 		isEquals(LongNumber(101, 2).toString(), std::string("1100101.00")),
-		"With precision"
+		"Precision = 2"
 	);
 	testerInt.registerTest(
 		isEquals(LongNumber(115, 0).toString(), std::string("1110011")),
@@ -325,14 +325,14 @@ int main(void) {
 		isEquals(
 			LongNumber(-0.25L, 4) * LongNumber(-0.25L, 4), LongNumber(0.0625L)
 		),
-		"(-0.25) * (-0.25) = 0.0625 (with precision = 4)"
+		"(-0.25) * (-0.25) = 0.0625 (precision = 4)"
 	);
 	testerMultiplication.registerTest(
 		[]() {
 			return (LongNumber(0.25L, 3) * LongNumber(0.25L, 3)) ==
 				   LongNumber(0.0L);
 		},
-		"0.25 * 0.25 = 0.0 (with precision = 3, which is too little)"
+		"0.25 * 0.25 = 0.0 (precision = 3, which is too little)"
 	);
 	testerMultiplication.registerTest(
 		isEquals(LongNumber(10) * LongNumber(0.25L), LongNumber(2.5L)),
@@ -491,7 +491,7 @@ int main(void) {
 	success &= testerAssignment.runTests();
 
 	// -------------------------------------------------------------------
-	test::Tester testerPrecision("setPrecision");
+	test::Tester testerPrecision("Precision");
 	testerPrecision.registerTest(
 		[]() {
 			LongNumber x(0.5L);
@@ -525,6 +525,31 @@ int main(void) {
 			return x.toString() == ".100";
 		},
 		"Raise precision"
+	);
+	testerPrecision.registerTest(
+		isEquals(
+			LongNumber(0.5L).withPrecision(1).toString(), std::string(".1")
+		),
+		"Lower precision | withPrecision"
+	);
+	testerPrecision.registerTest(
+		isEquals(
+			LongNumber(0.625L, 1).withPrecision(1).toString(), std::string(".1")
+		),
+		"Lower precision (overwriting value) | withPrecision"
+	);
+	testerPrecision.registerTest(
+		isEquals(
+			LongNumber(0.5L, 1).withPrecision(3).toString(), std::string(".100")
+		),
+		"Numbers should be equal after precision drop | withPrecision"
+	);
+	testerPrecision.registerTest(
+		isEquals(
+			LongNumber(0.5L, 1).withPrecision(1),
+			LongNumber(0.625L, 1).withPrecision(1)
+		),
+		"Raise precision | withPrecision"
 	);
 
 	success &= testerPrecision.runTests();
