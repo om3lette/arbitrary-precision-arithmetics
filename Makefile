@@ -3,6 +3,7 @@ CFLAGS=-c --std=c++23 -Wall -Wextra -Werror -Wundef -pedantic
 LDFLAGS=
 
 BUILD_PATH=build
+COVERAGE_PATH=coverage
 SRC_PATH=src
 
 BUILD ?= debug
@@ -11,13 +12,19 @@ DIGITS ?= 100
 ifeq ($(BUILD), release)
 	CFLAGS += -O3 -DNDEBUG
 else
-	CFLAGS += -g -Og
+	CFLAGS += -g -Og --coverage
+	LDFLAGS += --coverage
 endif
 
 COMPILE = $(CC) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 
-pi:
+coverage: $(BUILD_PATH)/test-build | $(BUILD_PATH)
+	./build/test-build
+	lcov --capture --directory $(BUILD_PATH) --output-file $(BUILD_PATH)/coverage.info;\
+		genhtml $(BUILD_PATH)/coverage.info --output-directory $(COVERAGE_PATH);
+
+pi: $(BUILD_PATH)/pi
 	bash -c "time $(BUILD_PATH)/calc-pi $(DIGITS)"
 
 pi.build: link-pi
@@ -25,8 +32,10 @@ pi.build: link-pi
 pi.profile:
 	valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes $(BUILD_PATH)/calc-pi 3000
 
-test: link-tests
+test: $(BUILD_PATH)/test-build
 	$(BUILD_PATH)/test-build
+
+test.build: link-tests
 
 $(BUILD_PATH):
 	mkdir -p $(BUILD_PATH)
@@ -53,4 +62,4 @@ pi-utils.o: $(SRC_PATH)/pi/pi-utils.cpp | $(BUILD_PATH)
 	$(COMPILE) $(SRC_PATH)/pi/pi-utils.cpp -o $(BUILD_PATH)/pi-utils.o
 
 clean:
-	rm -rf $(BUILD_PATH)
+	rm -rf $(BUILD_PATH) $(COVERAGE_PATH)

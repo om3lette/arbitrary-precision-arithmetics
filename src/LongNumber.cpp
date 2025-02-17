@@ -84,10 +84,13 @@ void LongNumber::convertBinaryString(const std::string &input) {
 	chunks.push_back(curChunk);
 }
 // Initializes `sign`, `fractionBits`, `chunks` from a given binary string
+// If size of fraction part is greater than fractionBits overflow will be ignored
 // Throws `std::invalid argument` if digits outside of base's scope are present
+// Throws `std::invalid argument` if string is empty
 void LongNumber::fromBinaryString(
 	const std::string &input, uint32_t _fractionBits
 ) {
+	// FIXME: This seems to work but is heart breaking to look at
 	if (input.size() == 0)
 		throw std::invalid_argument("String cannot be empty!");
 	fractionBits = _fractionBits;
@@ -116,6 +119,11 @@ void LongNumber::fromBinaryString(
 		'0'
 	);
 	convertBinaryString(fractionPartStr);
+	if (chunks.size() > getFractionChunks())
+		chunks.erase(
+			chunks.begin(),
+			chunks.begin() + (chunks.size() - getFractionChunks())
+		);
 	chunks.insert(
 		chunks.begin(), std::max(0UL, getFractionChunks() - chunks.size()), 0
 	);
@@ -200,7 +208,7 @@ LongNumber LongNumber::withPrecision(uint32_t precision) const {
 // Returns `chunks[index]` with its value adjusted for precision
 // Throws `std::out_of_range` if index is incorrect
 uint32_t LongNumber::getChunk(uint32_t index) const {
-	if (index > chunks.size())
+	if (index >= chunks.size())
 		throw std::out_of_range("Chunk index out of range");
 	if (index != 0 || (fractionBits % digitsPerChunk) == 0) {
 		return chunks[index];

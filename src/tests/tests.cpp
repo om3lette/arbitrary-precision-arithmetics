@@ -156,6 +156,10 @@ int main(void) {
 	testerSpaceshipBasic.registerTest(
 		[]() { return LongNumber(-10) < LongNumber(-9); }, "-10 < -9"
 	);
+	testerSpaceshipBasic.registerTest(
+		isEquals(LongNumber(0.0L, 0), LongNumber(-0.0L, 0)),
+		"Two numbers with no chunks (0 = 0)"
+	);
 
 	success &= testerSpaceshipBasic.runTests();
 
@@ -237,6 +241,18 @@ int main(void) {
 		"1 >>= 1 (carry to fraction)"
 	);
 	testerShifts.registerTest(
+		isEquals(LongNumber(10) >>= 10000, LongNumber(0.0L)),
+		"10 >>= 10000 (Exceptionally large right shift)"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(4) >>= -2, LongNumber(16)),
+		"4 >>= -2 (Right into left shift)"
+	);
+	testerShifts.registerTest(
+		isEquals(LongNumber(4) <<= -2, LongNumber(1)),
+		"4 <<= -2 (Left into right shift)"
+	);
+	testerShifts.registerTest(
 		isEquals(LongNumber(1) <<= 33, LongNumber(1LL << 33)),
 		"1 <<= 33 (carry)"
 	);
@@ -250,6 +266,20 @@ int main(void) {
 			std::string(".0000000000000000000000000000001")
 		),
 		"1 >>= 31"
+	);
+	testerShifts.registerTest(
+		[]() {
+			LongNumber x(1);
+			return x << 2 == LongNumber(4);
+		},
+		"1 << 2 == 4"
+	);
+	testerShifts.registerTest(
+		[]() {
+			LongNumber x(4);
+			return x >> 2 == LongNumber(1);
+		},
+		"4 >> 2 == 1"
 	);
 
 	success &= testerShifts.runTests();
@@ -471,6 +501,22 @@ int main(void) {
 		},
 		"sqrt(-5) = Error", true
 	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber("");
+			return true;
+		},
+		"Initializing from an empty string", true
+	);
+	testerExcep.registerTest(
+		[]() {
+			LongNumber obj(10, 0);
+			auto ptr = &LongNumber::getChunk;
+			std::cout << std::invoke(ptr, obj, 1) << "\n";
+			return true;
+		},
+		"Out of range chunk retrieval", true
+	);
 
 	success &= testerExcep.runTests();
 
@@ -678,6 +724,62 @@ int main(void) {
 	// clang-format on
 
 	success &= testerPi.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerAbs("Abs");
+	testerAbs.registerTest(
+		isEquals(LongNumber(2.0L).abs(), LongNumber(2)), "|x| = x"
+	);
+	testerAbs.registerTest(
+		isEquals(LongNumber(-2.0L).abs(), LongNumber(2)), "|-x| = x"
+	);
+	// clang-format off
+	testerAbs.registerTest(
+		isEquals(LongNumber("10000000000000000000000000000000000000000").abs(), LongNumber("10000000000000000000000000000000000000000")), "|x| = x(multiple chunks)"
+	);
+	LongNumber x("10000000000000000000000000000000000000000");
+	x *= -1;
+	testerAbs.registerTest(
+		isEquals(x.abs(), LongNumber("10000000000000000000000000000000000000000")), "|-x| = x (multiple chunks)"
+	);
+	// clang-format on
+
+	success &= testerAbs.runTests();
+
+	// -------------------------------------------------------------------
+	test::Tester testerPrintChunks("Print chunks");
+	// clang-format off
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber(0.0).printChunks(); }, "Chunks (little endian): [0, 0, 0 | -] | Precision: 96, Fraction chunks: 3\n"),
+		"0 with 3 fraction chunks"
+	);
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber(0.0, 0).printChunks(); }, "Chunks (little endian): [- | -] | Precision: 0, Fraction chunks: 0\n"),
+		"0 with 0 fraction chunks"
+	);
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber(1UL << 30).printChunks(); }, "Chunks (little endian): [0, 0, 0 | 1073741824] | Precision: 96, Fraction chunks: 3\n"),
+		"1UL << 30"
+	);
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber(3284761432).printChunks(); }, "Chunks (little endian): [0, 0, 0 | 3284761432] | Precision: 96, Fraction chunks: 3\n"),
+		"3284761432"
+	);
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber(0.0001220703125).printChunks(); }, "Chunks (little endian): [0, 0, 524288 | -] | Precision: 96, Fraction chunks: 3\n"),
+		"2 ^ (-13)"
+	);
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber("110000000000000000000000000000000.000000000000000000000000000000011", 32).printChunks(); }, "Chunks (little endian): [1 | 2147483648, 1] | Precision: 32, Fraction chunks: 1\n"),
+		"Multiple chunks #1"
+	);
+	testerPrintChunks.registerTest(
+		compareOutput([]() { LongNumber("100000000000000000000000000000000.000000000000000000000000000000011", 33).printChunks(); }, "Chunks (little endian): [2147483648, 1 | 0, 1] | Precision: 33, Fraction chunks: 2\n"),
+		"Multiple chunks #2"
+	);
+	// clang-format on
+
+	success &= testerPrintChunks.runTests();
 
 	if (!success) throw std::logic_error("\033[1;31mSOME TESTS FAILED!\033[0m");
 	std::cout << "\033[1;32m\nALL TESTS PASSED SUCCESSFULLY!\033[0m\n"
