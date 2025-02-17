@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <compare>
 #include <iostream>
@@ -87,6 +88,8 @@ void LongNumber::convertBinaryString(const std::string &input) {
 void LongNumber::fromBinaryString(
 	const std::string &input, uint32_t _fractionBits
 ) {
+	if (input.size() == 0)
+		throw std::invalid_argument("String cannot be empty!");
 	fractionBits = _fractionBits;
 
 	// Divide string into whole and fraction (after decimal point) parts
@@ -113,7 +116,9 @@ void LongNumber::fromBinaryString(
 		'0'
 	);
 	convertBinaryString(fractionPartStr);
-	while (chunks.size() < getFractionChunks()) chunks.push_back(0);
+	chunks.insert(
+		chunks.begin(), std::max(0UL, getFractionChunks() - chunks.size()), 0
+	);
 
 	rem = wholePartStr.size() % digitsPerChunk;
 	wholePartStr.insert(
@@ -138,7 +143,7 @@ LongNumber::LongNumber() {
 }
 LongNumber::LongNumber(long double input, uint32_t _fractionBits) {
 	sign = input < 0 ? -1 : 1;
-	input = abs(input);
+	input = std::abs(input);
 	fractionBits = _fractionBits;
 	allocateFraction();
 
@@ -146,6 +151,7 @@ LongNumber::LongNumber(long double input, uint32_t _fractionBits) {
 
 	long double wholePart;
 	long double fracPart = std::modf(input, &wholePart);
+
 	while (wholePart >= 1) {
 		chunks.push_back(static_cast<uint32_t>(
 			std::fmod(wholePart, (1ULL << digitsPerChunk))
@@ -185,9 +191,10 @@ void LongNumber::setPrecision(uint32_t _precision) {
 }
 
 // Calls `setPrecision` and returns the number
-LongNumber LongNumber::withPrecision(uint32_t precision) {
-	(*this).setPrecision(precision);
-	return *this;
+LongNumber LongNumber::withPrecision(uint32_t precision) const {
+	LongNumber result = *this;
+	result.setPrecision(precision);
+	return result;
 };
 
 // Returns `chunks[index]` with its value adjusted for precision
@@ -204,6 +211,11 @@ uint32_t LongNumber::getChunk(uint32_t index) const {
 }
 
 // *MATH UTILS*
+LongNumber LongNumber::abs(void) const {
+	LongNumber result = *this;
+	result.sign = 1;
+	return result;
+}
 
 LongNumber LongNumber::pow(uint32_t power) const {
 	if (power == 1) return *this;
@@ -263,7 +275,7 @@ void LongNumber::printChunks(void) const {
 	std::cout << "] | " << "Precision: " << fractionBits
 			  << ", Fraction chunks: " << getFractionChunks() << std::endl;
 }
-const std::string LongArithm::LongNumber::toString(void) const {
+const std::string LongArithm::LongNumber::toBinaryString(void) const {
 	std::string output;
 	if (sign == -1) output += '-';
 
@@ -297,6 +309,52 @@ const std::string LongArithm::LongNumber::toString(void) const {
 			output += digitToChar((curChunk & (1UL << j)) >> j);
 		}
 	}
+	return output;
+}
+
+// Constructs a decimal string representation
+const std::string LongNumber::toString(uint32_t digitsAfterDecimal) const {
+	std::string output = "";
+
+	// Work with absolute values
+	LongNumber wholePart = (*this).withPrecision(0).abs();
+	LongNumber fracPart = (*this).abs();
+	fracPart.chunks.resize(getFractionChunks());
+
+	LongNumber base = LongNumber(10.0L, 0);
+
+	while (wholePart != 0) {
+		LongNumber q = wholePart / base;
+		LongNumber r = wholePart - (q * base);
+		assert(r < base);
+
+		std::string newChar =
+			r.chunks.empty() ? "0" : std::to_string(r.chunks.front());
+		output += newChar;
+
+		wholePart = q;
+	}
+	if (sign == -1) output += "-";
+	if (fractionBits == 0 && output.empty()) output = "0";
+
+	std::ranges::reverse(output);
+
+	if (fractionBits == 0 || digitsAfterDecimal == 0 || fracPart == 0)
+		return output;
+	output += ".";
+	uint32_t digitsCnt = 0;
+
+	while (digitsCnt++ < digitsAfterDecimal && fracPart != 0) {
+		fracPart *= base;
+		LongNumber r = fracPart.withPrecision(0);
+
+		assert(r < base);
+		std::string newChar = r == 0 ? "0" : std::to_string(r.chunks.front());
+
+		fracPart -= r;
+		output += newChar;
+	}
+
 	return output;
 }
 
@@ -346,16 +404,20 @@ LongNumber LongNumber::operator+(const LongNumber &other) const {
 		if (sign == -1) return other - (-(*this)); // -a + b = b - a
 		return *this - (-other);				   // a + -b = a - b
 	}
-	LongNumber result(0, std::max(fractionBits, other.fractionBits));
+	uint32_t maxPrecision = std::max(fractionBits, other.fractionBits);
+	LongNumber result(0, maxPrecision);
 	result.sign = sign;
 	size_t maxSize = std::max(chunks.size(), other.chunks.size());
 	result.chunks.resize(maxSize);
 
+	LongNumber a = (*this).withPrecision(maxPrecision);
+	LongNumber b = other.withPrecision(maxPrecision);
+
 	uint32_t carry = 0;
 	for (uint32_t i = 0; i < maxSize; i++) {
 		uint64_t sum = carry;
-		if (i < chunks.size()) sum += chunks[i];
-		if (i < other.chunks.size()) sum += other.chunks[i];
+		if (i < a.chunks.size()) sum += a.chunks[i];
+		if (i < b.chunks.size()) sum += b.chunks[i];
 
 		carry = sum >> digitsPerChunk;
 		result.chunks[i] = static_cast<uint32_t>(sum);
@@ -386,7 +448,9 @@ LongNumber LongNumber::operator-(const LongNumber &other) const {
 	// If |a| < |b|, result is negative
 	bool negateResult = (*this < other);
 	const LongNumber &larger = negateResult ? other : *this;
-	const LongNumber &smaller = negateResult ? *this : other;
+
+	LongNumber smaller = negateResult ? *this : other;
+	smaller.setPrecision(larger.fractionBits);
 
 	LongNumber result(0, maxPrecision);
 	result.sign = negateResult ? -1 : 1;
@@ -453,33 +517,32 @@ LongNumber LongNumber::operator/(const LongNumber &other) const {
 	if (other == 0) throw std::invalid_argument("Division by zero");
 
 	uint32_t maxPrecision = std::max(fractionBits, other.fractionBits);
+	// Set min `fractionBits` for division
+	// Allows to accuratly divide "integer" values
+	uint32_t normPrecision = std::max(maxPrecision, 96U);
 
 	// Work with absolute values
-	LongNumber dividend = *this;
-	dividend.sign = 1;
-	dividend.setPrecision(maxPrecision);
+	LongNumber dividend = (*this).abs().withPrecision(normPrecision);
 
-	LongNumber divisor = other;
-	divisor.sign = 1;
-	divisor.setPrecision(maxPrecision);
+	LongNumber divisor = other.abs().withPrecision(normPrecision);
 
 	// Shift fraction part (full chunks)
-	dividend <<= getFractionChunks() * digitsPerChunk;
+	dividend <<= dividend.getFractionChunks() * digitsPerChunk;
 
-	LongNumber quotient(0.0L, maxPrecision);
+	LongNumber quotient(0.0L, normPrecision);
 	quotient.sign = sign * other.sign;
-	LongNumber remainder(0.0L, maxPrecision);
+	LongNumber remainder(0.0L, normPrecision);
 
 	// Bitwise division
 	for (int i = dividend.chunks.size() * digitsPerChunk - 1; i >= 0; --i) {
 		remainder <<= 1;
 		remainder.chunks[0] |= (dividend.getBit(i) ? 1 : 0);
-
 		if (remainder >= divisor) {
 			remainder -= divisor;
 			quotient.setBit(i);
 		}
 	}
+	quotient.setPrecision(maxPrecision);
 	// Should not be neccessary, more of a precaution
 	quotient.truncateWholePart();
 	return quotient;

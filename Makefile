@@ -20,7 +20,7 @@ pi: link-pi
 	bash -c "time $(BUILD_PATH)/calc-pi 1000"
 
 pi.profile:
-	valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes $(BUILD_PATH)/calc-pi 10000
+	valgrind --tool=callgrind --dump-instr=yes --collect-jumps=yes $(BUILD_PATH)/calc-pi 3000
 
 test: link-tests
 	$(BUILD_PATH)/test-build

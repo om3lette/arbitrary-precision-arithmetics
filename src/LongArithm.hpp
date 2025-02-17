@@ -38,14 +38,16 @@ class LongNumber {
 	~LongNumber() = default;
 
 	void setPrecision(uint32_t precision);
-	LongNumber withPrecision(uint32_t precision);
+	LongNumber withPrecision(uint32_t precision) const;
 	uint32_t getChunk(uint32_t index) const;
 
+	LongNumber abs(void) const;
 	LongNumber pow(uint32_t power) const;
 	LongNumber sqrt(void) const;
 
 	void printChunks(void) const;
-	const std::string toString(void) const;
+	const std::string toBinaryString(void) const;
+	const std::string toString(uint32_t digitsAfterDecimal = 8) const;
 
 	std::strong_ordering operator<=>(const LongNumber &other) const;
 	bool operator==(const LongNumber &other) const;
