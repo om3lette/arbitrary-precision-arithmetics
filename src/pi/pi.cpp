@@ -1,4 +1,4 @@
-#include "pi-utils.cpp"
+#include "pi.hpp"
 #include <cmath>
 
 int main(int argc, char **argv) {
@@ -20,7 +20,8 @@ int main(int argc, char **argv) {
 		std::cerr << "Precision must be > 0\n";
 		return 1;
 	}
-	LongNumber pi = calculatePi(decimalToBinaryPrecision(precision));
+	LongArithm::LongNumber pi =
+		pi::calculatePi(pi::decimalToBinaryPrecision(precision));
 	std::cout << pi.toString(precision) << '\n';
 	return 0;
 }

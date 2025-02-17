@@ -39,8 +39,8 @@ bool Tester::runTests(void) {
 		}
 		testSuccess += success;
 		std::cout << i + 1 << ") " << test.infoMessage << ": "
-				  << (success ? "\033[1;32m[PASSED]\033[0m"
-							  : "\033[1;31m[FAILED]\033[0m")
+				  << (success ? "\033[1;32m[OK]\033[0m"
+							  : "\033[1;31m[FAIL]\033[0m")
 				  << '\n';
 	}
 	float correctPercentage =
