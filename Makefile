@@ -24,7 +24,7 @@ coverage: $(BUILD_PATH)/test-build | $(BUILD_PATH)
 	lcov --capture --directory $(BUILD_PATH) --output-file $(BUILD_PATH)/coverage.info;\
 		genhtml $(BUILD_PATH)/coverage.info --output-directory $(COVERAGE_PATH);
 
-pi: $(BUILD_PATH)/pi
+pi: $(BUILD_PATH)/calc-pi
 	bash -c "time $(BUILD_PATH)/calc-pi $(DIGITS)"
 
 pi.build: link-pi

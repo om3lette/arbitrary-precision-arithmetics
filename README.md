@@ -29,10 +29,10 @@ It can be changed at a later date using\
 There are multiple ways to create `LongNumber`
 
 ```
-LongNum x = 2.0L_longnum; // Precision defaults to 96 bits
+LongNum x = 2.0_longnum; // Precision defaults to 96 bits
 LongNum y = LongNum(2.0L, 32); // From long double
 LongNum z = LongNum(2, 32);
-LongNum x = LongNum("10", 32); // Or binary string
+LongNum v = LongNum("10", 32); // Or binary string
 ```
 
 ## Output
@@ -44,6 +44,9 @@ One can use `toBinaryString` or `toString` method to get a binary and decimal re
 
 ### Targets
 
+> [!IMPORTANT]
+> When calculating pi it is advised to set `BUILD=release`
+
 - `test` - runs test executeable
 - `test.build` - builds test executable
 - `coverage` - `test.build` is a prerequisite. Runs tests and generates coverage report
@@ -51,6 +54,19 @@ One can use `toBinaryString` or `toString` method to get a binary and decimal re
 - `pi.build` - builds pi executable
 - `pi.profile` - runs profiling to later analyse using kcachegrind
 - `clean` - deletes build/coverage folders
+
+> [!NOTE]
+> While attempting `pi.profile` I frequently encountered
+>
+> ```
+> valgrind: m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
+> ```
+>
+> One possible solution is to raise `ulimit`:
+>
+> ```bash
+> ulimit -n 8192
+> ```
 
 ### Arguments:
 
