@@ -19,6 +19,8 @@ endif
 COMPILE = $(CC) $(CFLAGS)
 LINK = $(CC) $(LDFLAGS)
 
+all: link-tests link-pi
+
 coverage: $(BUILD_PATH)/test-build | $(BUILD_PATH)
 	./build/test-build
 	lcov --capture --directory $(BUILD_PATH) --output-file $(BUILD_PATH)/coverage.info;\
